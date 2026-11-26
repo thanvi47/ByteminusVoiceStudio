@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  emotions,
   detectLanguage,
   delivery,
   escapeXML,
@@ -8,6 +9,11 @@ import {
   srt,
 } from "../lib/script";
 describe("scripts", () => {
+  it("provides delivery settings for every non-neutral preset", () => {
+    for (const emotion of emotions.filter((e) => e !== "Neutral")) {
+      expect(delivery(emotion, 100)).not.toEqual({ rate: 1, pitch: 1 });
+    }
+  });
   it("detects Bengali and English", () => {
     expect(detectLanguage("আমি বাংলা বলি")).toBe("bn");
     expect(detectLanguage("Hello")).toBe("en-US");

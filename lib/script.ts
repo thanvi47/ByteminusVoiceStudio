@@ -116,25 +116,35 @@ export function parseScript(text: string): { text?: string; pause?: number }[] {
 }
 export function delivery(emotion: string, intensity: number) {
   const amount = intensity / 100;
-  const fast = [
-    "Happy",
-    "Excited",
-    "Angry",
-    "Surprised",
-    "Proud",
-    "Hopeful",
-  ].includes(emotion);
-  const slow = [
-    "Sad",
-    "Calm",
-    "Serious",
-    "Whisper",
-    "Documentary Narration",
-    "Disappointed",
-  ].includes(emotion);
+  // Conservative prosody hints, not native emotional acting or whisper synthesis.
+  const presets: Record<(typeof emotions)[number], [number, number]> = {
+    Neutral: [0, 0],
+    Happy: [0.15, 0.1],
+    Sad: [-0.2, -0.12],
+    Excited: [0.25, 0.14],
+    Angry: [0.12, -0.05],
+    Calm: [-0.18, -0.08],
+    Serious: [-0.1, -0.1],
+    Scared: [0.16, 0.15],
+    Nervous: [0.12, 0.1],
+    Surprised: [0.18, 0.17],
+    Confused: [-0.08, 0.06],
+    Disappointed: [-0.16, -0.1],
+    Worried: [-0.07, 0.05],
+    Relieved: [-0.1, 0.04],
+    Frustrated: [0.1, -0.06],
+    Embarrassed: [-0.1, 0.06],
+    Proud: [0.06, -0.02],
+    Hopeful: [0.08, 0.08],
+    Whisper: [-0.15, -0.08],
+    "News Presenter": [0.04, -0.04],
+    "Documentary Narration": [-0.14, -0.1],
+    Storytelling: [-0.06, 0.04],
+  };
+  const [rate, pitch] = presets[emotion as (typeof emotions)[number]] ?? [0, 0];
   return {
-    rate: 1 + (fast ? 0.22 : slow ? -0.2 : 0) * amount,
-    pitch: 1 + (fast ? 0.12 : slow ? -0.1 : 0) * amount,
+    rate: 1 + rate * amount,
+    pitch: 1 + pitch * amount,
   };
 }
 export function sentences(text: string) {
