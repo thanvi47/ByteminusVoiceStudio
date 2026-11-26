@@ -65,7 +65,7 @@ const sections = [
 export default function Studio() {
   const [section, setSection] = useState<string>("Voice studio");
   const [text, setText] = useState(sample);
-  const [voice, setVoice] = useState<SynthesisInput["voice"]>("bn");
+  const [voice, setVoice] = useState<SynthesisInput["voice"]>("mithi:charvi");
   const [language, setLanguage] = useState("bn");
   const [gender, setGender] = useState("All");
   const [emotion, setEmotion] = useState<SynthesisInput["emotion"]>("Neutral");
@@ -81,6 +81,8 @@ export default function Studio() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [theme, setTheme] = useState("dark");
   const [search, setSearch] = useState("");
+  const [libraryLanguage, setLibraryLanguage] = useState("all");
+  const [libraryGender, setLibraryGender] = useState("All");
   const [auth, setAuth] = useState<boolean | null>(null);
   const [local, setLocal] = useState(false);
   const [password, setPassword] = useState("");
@@ -89,6 +91,11 @@ export default function Studio() {
   const [progress, setProgress] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [dialogue, setDialogue] = useState(false);
+  const [style, setStyle] = useState("");
+  const [showLegacy, setShowLegacy] = useState(false);
+  const [engineFilter, setEngineFilter] = useState("all");
+  const [engines, setEngines] = useState<Record<string, boolean>>({});
+  const [elapsed, setElapsed] = useState(0);
   const audio = useRef<HTMLAudioElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const clipsRef = useRef<Clip[]>([]);
@@ -118,6 +125,10 @@ export default function Studio() {
   }, [theme]);
   useEffect(() => {
     if (!auth) return;
+    fetch("/api/tts/voices")
+      .then((r) => r.json())
+      .then((d) => setEngines(d.neural?.engines ?? {}))
+      .catch(() => {});
     fetch("/api/tts/usage")
       .then((r) => r.json())
       .then((d) => {
@@ -126,21 +137,28 @@ export default function Studio() {
       .catch(() => {});
   }, [auth, clips]);
   useEffect(() => {
+    if (!busy) return;
+    setElapsed(0);
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [busy]);
+  useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(t);
   }, [notice]);
   const filtered = voices.filter(
     (v) =>
-      (language === "all" || v.language === language) &&
-      (gender === "All" || v.gender === gender) &&
+      (libraryLanguage === "all" || v.language === libraryLanguage) &&
+      (libraryGender === "All" || v.gender === libraryGender) &&
+      (showLegacy || v.neural) &&
+      (engineFilter === "all" || v.engine === engineFilter) &&
       `${v.name} ${v.accent}`.toLowerCase().includes(search.toLowerCase()),
   );
   function changeLanguage(value: string) {
     setLanguage(value);
-    const selected = voices.find(
-      (v) => v.language === value && (gender === "All" || v.gender === gender),
-    );
+    setGender("All");
+    const selected = voices.find((v) => v.language === value && v.neural);
     if (selected) setVoice(selected.id as SynthesisInput["voice"]);
   }
   async function login(e: React.FormEvent) {
@@ -194,7 +212,11 @@ export default function Studio() {
     setBusy(true);
     setError("");
     const requestedVoice = (overrideVoice ?? voice) as SynthesisInput["voice"];
-    setProgress("Preparing your voice…");
+    setProgress(
+      voices.find((v) => v.id === requestedVoice)?.styleMode === "prompted"
+        ? "Loading expressive voice and generating on CPU. This can take several minutes…"
+        : "Generating neural speech on your CPU. First use loads the model…",
+    );
     try {
       const r = await fetch("/api/tts/generate", {
         method: "POST",
@@ -207,6 +229,7 @@ export default function Studio() {
           rate,
           pitch,
           format,
+          style,
         }),
       });
       if (!r.ok) {
@@ -362,7 +385,8 @@ export default function Studio() {
           </span>
           <div className="top-actions">
             <span className="engine-pill">
-              <span /> Local engine · eSpeak NG
+              <span /> {choice.neural ? "Neural" : "Legacy"} · {choice.engine}{" "}
+              {choice.neural && !engines[choice.engine] ? "· unavailable" : ""}
             </span>
             <button
               className="icon-btn"
@@ -405,7 +429,7 @@ export default function Studio() {
               {section === "Voice studio"
                 ? "A little text. A little expression. Something worth listening to."
                 : section === "Voice library"
-                  ? "Real eSpeak NG voices and synthetic variants. Preview before you create."
+                  ? "Neural speaker profiles for Bangla and English. Preview to find your sound."
                   : section === "Projects"
                     ? "Saved scripts, ready for your next recording. Stored on this device."
                     : section === "History"
@@ -557,6 +581,9 @@ export default function Studio() {
                         <option value="bn">বাংলা · Bengali</option>
                         <option value="en-US">English · United States</option>
                         <option value="en-GB">English · United Kingdom</option>
+                        <option value="en">
+                          English · Expressive speakers
+                        </option>
                       </select>
                     </label>
                     <div className="label-row">
@@ -566,6 +593,15 @@ export default function Studio() {
                           <button
                             className={gender === g ? "chosen" : ""}
                             key={g}
+                            disabled={
+                              g !== "All" &&
+                              !voices.some(
+                                (v) =>
+                                  v.language === language &&
+                                  v.gender === g &&
+                                  (showLegacy || v.neural),
+                              )
+                            }
                             onClick={() => {
                               setGender(g);
                               const v = voices.find(
@@ -592,11 +628,20 @@ export default function Studio() {
                         .filter(
                           (v) =>
                             v.language === language &&
+                            (showLegacy || v.neural || v.id === voice) &&
                             (gender === "All" || v.gender === gender),
                         )
                         .map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.name} · {v.gender}
+                          <option
+                            key={v.id}
+                            value={v.id}
+                            disabled={v.neural && !engines[v.engine]}
+                          >
+                            {v.name}
+                            {v.gender === "Unspecified" ? "" : ` · ${v.gender}`}
+                            {v.neural && !engines[v.engine]
+                              ? " · Setup required"
+                              : ""}
                           </option>
                         ))}
                     </select>
@@ -607,7 +652,10 @@ export default function Studio() {
                       <div>
                         <strong>{choice.name}</strong>
                         <small>
-                          {choice.gender} variant · {choice.accent}
+                          {choice.neural
+                            ? "Neural speaker"
+                            : "Synthetic variant"}{" "}
+                          · {choice.accent}
                         </small>
                       </div>
                       <button
@@ -628,7 +676,11 @@ export default function Studio() {
                     <div className="line" />
                     <label className="label-row">
                       <span>Emotion & delivery</span>
-                      <span className="subtle-tag">APPROXIMATED</span>
+                      <span className="subtle-tag">
+                        {choice.styleMode === "prompted"
+                          ? "PROMPTED STYLE"
+                          : "APPROXIMATED"}
+                      </span>
                     </label>
                     <select
                       aria-label="Emotion"
@@ -641,6 +693,18 @@ export default function Studio() {
                         <option key={e}>{e}</option>
                       ))}
                     </select>
+                    {choice.styleMode === "prompted" && (
+                      <label className="style-label">
+                        Voice direction
+                        <input
+                          aria-label="Voice direction"
+                          value={style}
+                          maxLength={300}
+                          onChange={(e) => setStyle(e.target.value)}
+                          placeholder="Warm, expressive storyteller with a gentle delivery"
+                        />
+                      </label>
+                    )}
                     <label className="range-label">
                       Intensity <span>{intensity}%</span>
                       <input
@@ -689,9 +753,21 @@ export default function Studio() {
                       </>
                     )}
                     <p className="capability-note">
-                      Classic synthesized speech. Emotions adjust speed and
-                      pitch; Bengali has no verified regional accent.
+                      {choice.styleMode === "prompted"
+                        ? "Parler interprets your direction during synthesis. Emotion, intensity, speed and pitch are descriptive prompts, not exact controls. CPU generation is slower; use short sentences."
+                        : choice.neural
+                          ? "Neural speech. Emotion presets approximate delivery with speed and pitch; native emotional acting is not supported by this engine."
+                          : "Legacy robotic speech. Choose a neural voice for more natural audio."}
+                      {choice.language === "bn"
+                        ? " Bengali regional accent is not verified."
+                        : ""}
                     </p>
+                    {choice.neural && !engines[choice.engine] && (
+                      <p className="capability-note error">
+                        {choice.engine} is unavailable. Run{" "}
+                        <code>npm run dev:studio</code> after neural setup.
+                      </p>
+                    )}
                   </div>
                 </section>
               </div>
@@ -719,7 +795,7 @@ export default function Studio() {
                   </div>
                   <span className="format-info">
                     {format === "wav"
-                      ? "Uncompressed · 22.05 kHz"
+                      ? "Uncompressed · PCM audio"
                       : "96 kbps · Smaller file"}
                   </span>
                 </div>
@@ -744,7 +820,7 @@ export default function Studio() {
                   <span className="spin">
                     <LoaderCircle size={16} />
                   </span>
-                  {progress}
+                  {progress} {elapsed}s
                 </div>
               )}
               <section className="audio-panel panel">
@@ -863,23 +939,48 @@ export default function Studio() {
                 />
                 <select
                   aria-label="Filter language"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  value={libraryLanguage}
+                  onChange={(e) => setLibraryLanguage(e.target.value)}
                 >
                   <option value="all">All languages</option>
                   <option value="bn">Bengali</option>
                   <option value="en-US">English US</option>
                   <option value="en-GB">English UK</option>
+                  <option value="en">English expressive</option>
                 </select>
                 <select
                   aria-label="Filter gender"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
+                  value={libraryGender}
+                  onChange={(e) => setLibraryGender(e.target.value)}
                 >
-                  {["All", "Male", "Female"].map((g) => (
+                  {["All", "Male", "Female", "Unspecified"].map((g) => (
                     <option key={g}>{g}</option>
                   ))}
                 </select>
+              </div>
+              <div className="library-options">
+                <label>
+                  Engine
+                  <select
+                    aria-label="Filter engine"
+                    value={engineFilter}
+                    onChange={(e) => setEngineFilter(e.target.value)}
+                  >
+                    <option value="all">All engines</option>
+                    <option value="mithi">Mithi · Bangla</option>
+                    <option value="kokoro">Kokoro · English</option>
+                    <option value="parler">Parler · English style</option>
+                  </select>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showLegacy}
+                    onChange={(e) => setShowLegacy(e.target.checked)}
+                  />{" "}
+                  Show legacy robotic voices
+                </label>
+                <span>{filtered.length} profiles</span>
               </div>
               <div className="voice-cards">
                 {filtered.map((v) => (
@@ -889,12 +990,27 @@ export default function Studio() {
                     </span>
                     <h2>{v.name}</h2>
                     <p>
-                      {v.accent} · {v.gender} variant
+                      {v.accent}
+                      {v.gender === "Unspecified" ? "" : ` · ${v.gender}`}
                     </p>
                     <code>{v.id}</code>
-                    <p>eSpeak NG · no native emotion styles</p>
+                    <p>
+                      {v.engine} ·{" "}
+                      {v.styleMode === "prompted"
+                        ? "Prompted expressive delivery"
+                        : v.neural
+                          ? "Neural · approximated emotion"
+                          : "Legacy robotic engine"}
+                    </p>
+                    <p>
+                      {!v.neural
+                        ? "Built in"
+                        : engines[v.engine]
+                          ? "Model files installed"
+                          : "Setup required"}
+                    </p>
                     <button
-                      disabled={busy}
+                      disabled={busy || (v.neural && !engines[v.engine])}
                       onClick={() => {
                         setLanguage(v.language);
                         setGender("All");
@@ -1039,14 +1155,16 @@ export default function Studio() {
                   <AudioLines size={20} /> A free, independent studio
                 </h2>
                 <p>
-                  ByteminusVoiceStudio runs eSpeak NG inside Node.js. No paid
-                  APIs, trial credits, accounts with cloud speech providers, or
-                  subscriptions.
+                  Neural speech runs locally through Mithi, Kokoro and Parler.
+                  No paid APIs, trial credits or subscriptions. Model files are
+                  downloaded once; synthesis stays on this computer.
                 </p>
                 <p>
-                  Audio is synthesized speech, not neural voice acting.
-                  Male/female options are synthetic variants. Bengali is a
-                  generic language voice.
+                  Mithi provides 10 Bangla speaker profiles; Kokoro provides 28
+                  US/UK English profiles. Parler has 34 named English speakers
+                  with prompted delivery. Emotion quality varies; these are
+                  model voices, not a claim that every profile is a verified
+                  voice artist. Legacy eSpeak voices remain optional.
                 </p>
                 <div className="line" />
                 <h3>This server session</h3>
@@ -1135,13 +1253,14 @@ export default function Studio() {
             <h2 id="help-title">Your voice, your tools.</h2>
             <p>1. Write or import up to 3,000 characters.</p>
             <p>
-              2. Select Bengali, English US, or English UK and a voice variant.
+              2. Select Bengali, English US/UK, or English expressive speakers.
+              Choose a neural voice.
             </p>
             <p>3. Set delivery, choose WAV or MP3, and generate.</p>
             <p>
               Use <code>[pause 500ms]</code> or <code>[break 1.5s]</code> for
-              silence up to 10 seconds. Emotions approximate delivery using
-              pitch and rate.
+              silence up to 10 seconds. Mithi and Kokoro approximate emotion
+              with prosody. Parler uses prompted style with variable results.
             </p>
             <p>
               Save projects locally. Download audio to keep it. SRT timing is

@@ -4,12 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
+    "dev": "node scripts/dev-studio.mjs",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "dev:studio": "node scripts/dev-studio.mjs",
+    "neural:serve": "node scripts/serve-neural.mjs",
+    "dev:web": "next dev --hostname 127.0.0.1",
+    "start:studio": "node scripts/dev-studio.mjs --production"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

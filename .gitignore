@@ -6,3 +6,10 @@ coverage/
 test-results/
 playwright-report/
 *.tsbuildinfo
+.tools/
+.runtime/
+.venv/
+.models/
+.cache/
+samples/
+__pycache__/

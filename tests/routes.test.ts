@@ -10,6 +10,7 @@ vi.mock("next/headers", () => ({
 import { GET as session, POST as auth } from "../app/api/auth/[action]/route";
 import { GET, POST } from "../app/api/tts/[action]/route";
 import { GET as health } from "../app/api/health/route";
+import { voices } from "../lib/script";
 const ctx = (action: string) => ({ params: Promise.resolve({ action }) });
 const req = (path: string, body: unknown) =>
   new Request(`http://localhost:3000/api/${path}`, {
@@ -55,7 +56,7 @@ describe("API routes", () => {
     ).toBe(200);
     expect((await (await session()).json()).authenticated).toBe(true);
     const catalog = await GET(req("tts/voices", {}), ctx("voices"));
-    expect((await catalog.json()).voices).toHaveLength(6);
+    expect((await catalog.json()).voices).toHaveLength(voices.length);
     const audio = await POST(
       req("tts/generate", { text: "Hello API.", voice: "en-us" }),
       ctx("generate"),

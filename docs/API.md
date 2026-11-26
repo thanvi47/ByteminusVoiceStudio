@@ -15,9 +15,11 @@ Errors use `{ "error": { "message": "..." } }`. Auth/session and usage responses
 Synthesis JSON:
 
 ```json
-{"text":"Hello [pause 500ms] world.","voice":"en-us","emotion":"Neutral","intensity":50,"rate":1,"pitch":1,"format":"wav"}
+{"text":"Hello [pause 500ms] world.","voice":"kokoro:af_heart","emotion":"Neutral","intensity":50,"rate":1,"pitch":1,"format":"wav","style":""}
 ```
 
-Text: 1–3,000 characters; pauses: 0–10 seconds and at most 30. Voice IDs: `bn`, `bn+f3`, `en-us`, `en-us+f3`, `en-gb`, `en-gb+f3`. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. The server combines rate/pitch with approximated emotion mapping. No native acting styles exist in this engine.
+Text: 1–3,000 characters, with Parler additionally limited to 600; pauses: 0–10 seconds, at most 30; output: at most 90 seconds. Voice IDs are allowlisted by `/api/tts/voices` and `lib/voice-catalog.json`: e.g. `mithi:charvi`, `kokoro:af_heart`, `parler:Jon`. Legacy IDs remain explicit options. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. Mithi/Kokoro approximate delivery through pitch/rate. Parler interprets a descriptive direction; `style` adds up to 300 characters of voice direction and has an effect only for Parler. Exact prompt response is not guaranteed.
+
+The voices response includes `neural.engines`, reporting installed model files. Neural inference goes to a fixed loopback-only Python service; no client-provided provider URL, arbitrary subprocess command or paid service is accepted. Failures never fall back to robotic audio. Local CPU requests can take minutes; hosted serverless runtime compatibility is not promised.
 
 Success headers: `Content-Type: audio/wav` or `audio/mpeg`, attachment filename, `Cache-Control: no-store`, `X-Audio-Duration` in seconds and `X-Audio-Peaks` as 100 amplitude values. Errors include 400 validation, 401 authentication, 403 origin mismatch, 413 body size, 429 abuse limit and 503 engine unavailable/busy. Login allows 10 attempts/minute and synthesis 12 requests/minute per server process; process restarts reset limits.

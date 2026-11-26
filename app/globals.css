@@ -1416,3 +1416,42 @@ audio {
     transition: none !important;
   }
 }
+.style-label {
+  margin-top: 16px;
+}
+.style-label input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+}
+.library-options {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.library-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.library-options select {
+  width: auto;
+  margin: 0;
+}
+.capability-note.error {
+  padding: 10px;
+  border-radius: 6px;
+}
+.progress {
+  font-size: 14px;
+  line-height: 1.7;
+}

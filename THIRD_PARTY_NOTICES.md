@@ -14,5 +14,11 @@ This project uses free and open source software. The npm lockfile records exact 
 | TypeScript | Apache-2.0 | https://github.com/microsoft/TypeScript |
 | Vitest | MIT | https://github.com/vitest-dev/vitest |
 | Playwright | Apache-2.0 | https://github.com/microsoft/playwright |
+| Mithi v2 Flash | Apache-2.0 | https://huggingface.co/Oomni/mithi-v2-flash |
+| Kokoro-82M v1 | Apache-2.0 | https://huggingface.co/hexgrad/Kokoro-82M |
+| Parler-TTS Mini v1 / inference | Apache-2.0 | https://github.com/huggingface/parler-tts |
+| PyTorch | BSD-3-Clause | https://github.com/pytorch/pytorch |
+| Transformers | Apache-2.0 | https://github.com/huggingface/transformers |
+| FastAPI | MIT | https://github.com/fastapi/fastapi |
 
-Upstream copyright and full licenses are included in installed packages. The eSpeak NG build source is linked by its upstream package README. Preserve notices and corresponding-source obligations when redistributing this app or engine binaries. No neural model weights are included.
+Upstream copyright and full licenses are included in installed packages and downloaded model folders. Python transitive dependencies retain their licenses; inspect installed metadata and checked-in locks. Preserve upstream notices and corresponding-source obligations when redistributing software or engine binaries. Neural weights are downloaded separately and not committed. Mithi includes Kokoro and Maya text-normalization code; retain the credits in its README and LICENSE.

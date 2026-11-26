@@ -1,0 +1,15 @@
+# Install the CPU PyTorch wheel separately from https://download.pytorch.org/whl/cpu
+transformers>=5,<6
+safetensors>=0.4
+sentencepiece>=0.2
+numpy>=1.26,<3
+soundfile>=0.12
+misaki[en]>=0.9.4
+espeakng-loader>=0.2.4
+phonemizer-fork>=3.3.2
+spacy>=3.8
+num2words>=0.5
+kokoro>=0.9.4
+fastapi>=0.115
+uvicorn>=0.30
+librosa>=0.11

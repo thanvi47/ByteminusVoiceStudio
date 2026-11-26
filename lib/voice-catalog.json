@@ -1,0 +1,722 @@
+[
+  {
+    "id": "mithi:satvik",
+    "name": "Satvik · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Male",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:charvi",
+    "name": "Charvi · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Female",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:ahana",
+    "name": "Ahana · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Female",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:vaidehi",
+    "name": "Vaidehi · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Female",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:malini",
+    "name": "Malini · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Female",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:jahnavi",
+    "name": "Jahnavi · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Female",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:anirban",
+    "name": "Anirban · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Male",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:nakul",
+    "name": "Nakul · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Male",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:vasant",
+    "name": "Vasant · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Male",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "mithi:siddhant",
+    "name": "Siddhant · Mithi",
+    "language": "bn",
+    "accent": "Bengali (regional accent unverified)",
+    "gender": "Male",
+    "engine": "mithi",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_heart",
+    "name": "Heart · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_alloy",
+    "name": "Alloy · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_aoede",
+    "name": "Aoede · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_bella",
+    "name": "Bella · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_jessica",
+    "name": "Jessica · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_kore",
+    "name": "Kore · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_nicole",
+    "name": "Nicole · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_nova",
+    "name": "Nova · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_river",
+    "name": "River · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_sarah",
+    "name": "Sarah · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:af_sky",
+    "name": "Sky · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_adam",
+    "name": "Adam · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_echo",
+    "name": "Echo · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_eric",
+    "name": "Eric · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_fenrir",
+    "name": "Fenrir · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_liam",
+    "name": "Liam · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_michael",
+    "name": "Michael · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_onyx",
+    "name": "Onyx · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_puck",
+    "name": "Puck · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:am_santa",
+    "name": "Santa · Kokoro",
+    "language": "en-US",
+    "accent": "United States",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bf_alice",
+    "name": "Alice · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bf_emma",
+    "name": "Emma · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bf_isabella",
+    "name": "Isabella · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bf_lily",
+    "name": "Lily · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Female",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bm_daniel",
+    "name": "Daniel · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bm_fable",
+    "name": "Fable · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bm_george",
+    "name": "George · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "kokoro:bm_lewis",
+    "name": "Lewis · Kokoro",
+    "language": "en-GB",
+    "accent": "United Kingdom",
+    "gender": "Male",
+    "engine": "kokoro",
+    "styleMode": "approximate",
+    "neural": true
+  },
+  {
+    "id": "parler:Laura",
+    "name": "Laura · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Gary",
+    "name": "Gary · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Jon",
+    "name": "Jon · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Lea",
+    "name": "Lea · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Karen",
+    "name": "Karen · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Rick",
+    "name": "Rick · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Brenda",
+    "name": "Brenda · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:David",
+    "name": "David · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Eileen",
+    "name": "Eileen · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Jordan",
+    "name": "Jordan · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Mike",
+    "name": "Mike · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Yann",
+    "name": "Yann · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Joy",
+    "name": "Joy · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:James",
+    "name": "James · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Eric",
+    "name": "Eric · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Lauren",
+    "name": "Lauren · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Rose",
+    "name": "Rose · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Will",
+    "name": "Will · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Jason",
+    "name": "Jason · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Aaron",
+    "name": "Aaron · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Naomie",
+    "name": "Naomie · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Alisa",
+    "name": "Alisa · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Patrick",
+    "name": "Patrick · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Jerry",
+    "name": "Jerry · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Tina",
+    "name": "Tina · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Jenna",
+    "name": "Jenna · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Bill",
+    "name": "Bill · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Tom",
+    "name": "Tom · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Carol",
+    "name": "Carol · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Barbara",
+    "name": "Barbara · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Rebecca",
+    "name": "Rebecca · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Anna",
+    "name": "Anna · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Bruce",
+    "name": "Bruce · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "parler:Emily",
+    "name": "Emily · Parler",
+    "language": "en",
+    "accent": "English (speaker-dependent)",
+    "gender": "Unspecified",
+    "engine": "parler",
+    "styleMode": "prompted",
+    "neural": true
+  }
+]

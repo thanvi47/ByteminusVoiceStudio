@@ -15,3 +15,4 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run typecheck
+      - run: python -m py_compile neural/server.py neural/parler_worker.py scripts/download-models.py

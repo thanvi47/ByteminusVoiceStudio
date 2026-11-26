@@ -1,4 +1,15 @@
 import { z } from "zod";
+import neuralVoices from "./voice-catalog.json";
+export type VoiceProfile = {
+  id: string;
+  name: string;
+  language: string;
+  accent: string;
+  gender: string;
+  engine: string;
+  styleMode: string;
+  neural: boolean;
+};
 export const emotions = [
   "Neutral",
   "Happy",
@@ -23,7 +34,7 @@ export const emotions = [
   "Documentary Narration",
   "Storytelling",
 ] as const;
-export const voices = [
+const legacyVoices = [
   {
     id: "bn",
     name: "Bangla · Classic",
@@ -67,15 +78,43 @@ export const voices = [
     gender: "Female",
   },
 ];
-export const inputSchema = z.object({
-  text: z.string().trim().min(1).max(3000),
-  voice: z.enum(["bn", "bn+f3", "en-us", "en-us+f3", "en-gb", "en-gb+f3"]),
-  emotion: z.enum(emotions).default("Neutral"),
-  intensity: z.number().min(0).max(100).default(50),
-  rate: z.number().min(0.5).max(2).default(1),
-  pitch: z.number().min(0.5).max(1.5).default(1),
-  format: z.enum(["wav", "mp3"]).default("wav"),
-});
+export const voices: VoiceProfile[] = [
+  ...neuralVoices,
+  ...legacyVoices.map((v) => ({
+    ...v,
+    name: v.name + " · Legacy",
+    engine: "espeak",
+    styleMode: "approximate",
+    neural: false,
+  })),
+];
+export const inputSchema = z
+  .object({
+    text: z.string().trim().min(1).max(3000),
+    voice: z
+      .string()
+      .refine((id) => voices.some((v) => v.id === id), "Unknown voice"),
+    emotion: z.enum(emotions).default("Neutral"),
+    intensity: z.number().min(0).max(100).default(50),
+    rate: z.number().min(0.5).max(2).default(1),
+    pitch: z.number().min(0.5).max(1.5).default(1),
+    format: z.enum(["wav", "mp3"]).default("wav"),
+    style: z.string().trim().max(300).default(""),
+  })
+  .superRefine((data, ctx) => {
+    const profile = voices.find((v) => v.id === data.voice);
+    if (
+      profile?.neural &&
+      profile.language.startsWith("en") &&
+      /[\u0980-\u09ff]/u.test(data.text)
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["voice"],
+        message:
+          "Your script contains Bengali text. Select a Bengali voice or use an English script.",
+      });
+  });
 export type SynthesisInput = z.infer<typeof inputSchema>;
 export function detectLanguage(text: string) {
   return /[\u0980-\u09ff]/u.test(text) ? "bn" : "en-US";

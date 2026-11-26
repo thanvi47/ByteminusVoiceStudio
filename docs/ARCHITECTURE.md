@@ -1,11 +1,19 @@
 # Architecture
 
-The App Router renders a browser studio. Route Handlers provide auth and TTS APIs on the Node.js runtime. `lib/script.ts` owns Zod validation, pause parsing, language detection, XML escaping, delivery maps and estimated subtitle export. `lib/tts.ts` lazily initializes the eSpeak NG Emscripten engine. The engine is a server external dependency so its data file resolves correctly.
+The App Router renders the studio. Authenticated Next.js Route Handlers validate Zod input, allowlist voices, and invoke either loopback Python neural synthesis or an explicitly selected legacy eSpeak voice. lib/script.ts owns parsing/delivery/SRT; lib/voice-catalog.json is shared with Python.
 
-Synthesis uses a serialized queue because eSpeak is mutable. At most three requests can enter the running/waiting set. Script pieces synthesize sequentially; breaks become exactly sized 22,050 Hz PCM silence. Text is XML escaped before entering the engine. PCM is written to WAV or encoded with LAME JS into MP3. Peaks are calculated from real audio. No shell, binary subprocess or paid service is involved.
+```text
+Browser -> authenticated Next.js route -> loopback Python
+                                         |- Mithi (Bangla)
+                                         |- Kokoro (US/UK)
+                                         |- isolated Parler worker (English style)
+        <- WAV/MP3 export <- PCM + actual sample rate
+```
 
-The studio calls an authenticated API, receives an audio Blob and uses an object URL for playback. Generated clips retain a snapshot of their original text for SRT export, independent of later edits. Object URLs are revoked when deleted or on unmount. Audio history is in memory; localStorage holds at most 50 saved script projects and one saved draft.
+Mithi/Kokoro lazily load CPU models. One neural synthesis runs at a time. Parler uses a separate Transformers environment; the main service releases cached models before spawning it. The worker exits after inference to reclaim RAM. Subprocess/model paths are fixed, not derived from arbitrary commands or client URLs. Downloads occur during explicit setup.
 
-Authentication uses HMAC-SHA256 tokens with random nonce and 24-hour expiry. Cookies are HttpOnly, SameSite=Lax and Secure in production. Production rejects unconfigured auth. Local development can bypass auth only without APP_ACCESS_PASSWORD. POST requests reject conflicting Origin headers. Input is bounded and request quotas are process-local, appropriate for one private single-instance studio. A public multi-instance service needs distributed limiting and stronger identity before exposure.
+Python validates input, inserts exact PCM pauses, applies engine-specific delivery and returns mono PCM16 at 24 kHz. Parler is resampled to 24 kHz. Next preserves sample rate in WAV/LAME MP3 and computes actual amplitude peaks. Output is capped at 90 seconds; expressive input at 600 characters. Subtitle timing is estimated.
 
-The provider interface is intentionally small. Future neural adapters should declare voice, locale, license, native-style and export capabilities explicitly. No fake provider fallback is implemented. Model weights and their licenses require separate review. No persistent server filesystem or database is required.
+Legacy eSpeak remains serialized and optional. Neural failure never substitutes legacy speech. Browser projects are capped at 50; clips stay temporary object URLs. Original clip text is preserved for SRT. Process usage/abuse counters reset on restart.
+
+Production auth uses HMAC-SHA256, random nonce, 24-hour expiry and HttpOnly/SameSite=Lax/Secure cookies, failing closed without configuration. Local Python binds loopback and rejects browser origins/fetch headers and unexpected Host values. This is a private single-user setup; public replicas require stronger identity, distributed limiting and persistent accounting.
