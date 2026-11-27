@@ -414,7 +414,7 @@
     "name": "Lea · Parler",
     "language": "en",
     "accent": "English (speaker-dependent)",
-    "gender": "Unspecified",
+    "gender": "Female",
     "engine": "parler",
     "styleMode": "prompted",
     "neural": true

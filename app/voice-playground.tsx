@@ -34,7 +34,7 @@ import {
 } from "@/lib/director";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
 import AudioPlayer from "./audio-player";
-import { voiceUpdateLabel } from "@/lib/voice-updates";
+import { voiceUpdateLabel, voiceEmotionSample } from "@/lib/voice-updates";
 type Take = {
   id: string;
   input: SynthesisInput;
@@ -195,6 +195,20 @@ export default function VoicePlayground({
           .findIndex((v) => v.id === id) / 6,
       ),
     );
+  }
+  function previewEmotion(emotion: string) {
+    const p = samplePlayer.current;
+    const url = voiceEmotionSample(selected.id, emotion);
+    if (!p || !url) return;
+    const key = `${selected.id}:${emotion}`;
+    if (playing === key && !p.paused) { stopOther(); return; }
+    stopOther();
+    p.src = url;
+    setPlaying(key);
+    void p.play().catch(() => {
+      setPlaying("");
+      setError("Click the saved demo again to start playback.");
+    });
   }
   function pickGroup(value: string) {
     const first = voices.find((v) => v.engine === value);
@@ -451,6 +465,18 @@ export default function VoicePlayground({
             ✓ TESTED = এই profile দিয়ে Excited ও Scared নমুনা তৈরি করে পরীক্ষা হয়েছে।
             ★ UPDATED = একই emotion আপডেট পেয়েছে; আলাদা নমুনা পরীক্ষা হয়নি।
           </p>
+          {voiceEmotionSample(selected.id, "Excited") && (
+            <div>
+              <p className="director-note">Saved emotion examples · Fixed text, ready to play.</p>
+              <div className="director-actions">
+                {["Excited", "Scared"].map((emotion) => (
+                  <button key={emotion} aria-pressed={playing === `${selected.id}:${emotion}`} onClick={() => previewEmotion(emotion)}>
+                    <Play size={14} /> {emotion} demo · {selected.name.split(" · ")[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="director-note">
             <strong>Suggested delivery: {selected.delivery.label}</strong> ·{" "}
             {selected.delivery.description} These are editable suggestions, not
@@ -565,8 +591,10 @@ export default function VoicePlayground({
                 if (demo) {
                   patch({ text: demo.text });
                   if (demo.emotion) {
-                    patch({ voice: demo.language === "bn" ? "indic:Arjun" : "parler:Jon", emotion: demo.emotion, rate: 1, pitch: 1, intensity: 70 });
-                    setVoicePage(0);
+                    const voice = demo.voice ?? (demo.language === "bn" ? "indic:Arjun" : "parler:Jon");
+                    patch({ voice, emotion: demo.emotion, rate: 1, pitch: 1, intensity: 70 });
+                    const profile = voices.find((v) => v.id === voice)!;
+                    setVoicePage(Math.floor(voices.filter((v) => v.engine === profile.engine).findIndex((v) => v.id === voice) / 6));
                     const v = directionsForEmotion(demo.emotion)!;
                     setVibeId(v.id);
                     setDirections({ ...v.directions });

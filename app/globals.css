@@ -1548,6 +1548,12 @@ audio {
   line-height: 1.5;
   white-space: normal;
 }
+.director-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
 #clone-save-help {
   font-size: 14px;
   line-height: 1.7;
