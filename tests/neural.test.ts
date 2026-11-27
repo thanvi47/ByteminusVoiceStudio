@@ -1,15 +1,17 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import { encode, provider, neuralStatus } from "../lib/tts";
 import { voices, inputSchema } from "../lib/script";
-afterEach(() => vi.unstubAllGlobals());
+const { post } = vi.hoisted(() => ({ post: vi.fn() }));
+vi.mock("../lib/neural-http", () => ({ postNeural: post }));
+afterEach(() => { vi.unstubAllGlobals(); post.mockReset(); });
 describe("neural interoperability", () => {
   it.each(["mithi:charvi", "kokoro:af_heart"])("never turns emotion into pitch or time-stretch effects for %s", async (voice) => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(new Uint8Array(4800), {
       headers: { "X-Sample-Rate": "24000" },
     })));
-    vi.stubGlobal("fetch", fetchMock);
+    post.mockImplementation(fetchMock);
     await provider.synthesize(inputSchema.parse({ text: "Hello.", voice, emotion: "Funny", intensity: 100, rate: 1, pitch: 1 }));
-    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const sent = JSON.parse(fetchMock.mock.calls[0][0]);
     expect(sent.deliveryPitch).toBe(1);
     expect(sent.deliveryRate).toBe(1);
     expect(sent.pitch).toBe(1);
@@ -45,6 +47,7 @@ describe("neural interoperability", () => {
   });
   it("does not substitute robotic audio if the service is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    post.mockRejectedValue(Object.assign(new Error("refused"), { code: "ECONNREFUSED" }));
     await expect(
       provider.synthesize(
         inputSchema.parse({ text: "Hello", voice: "kokoro:af_heart" }),
@@ -53,26 +56,16 @@ describe("neural interoperability", () => {
     expect((await neuralStatus()).device).toBe("unavailable");
   });
   it("preserves provider errors and rejects invalid PCM responses", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({ detail: "Model not installed" }, { status: 503 }),
-        ),
-    );
+    post.mockResolvedValue(Response.json({ detail: "Model not installed" }, { status: 503 }));
     await expect(
       provider.synthesize(
         inputSchema.parse({ text: "Hello", voice: "mithi:charvi" }),
       ),
     ).rejects.toThrow("Model not installed");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
+    post.mockResolvedValue(
         new Response(new Uint8Array([0]), {
           headers: { "X-Sample-Rate": "24000" },
         }),
-      ),
     );
     await expect(
       provider.synthesize(
@@ -90,15 +83,10 @@ describe("neural interoperability", () => {
         Math.round(1000 * Math.sin(i * 0.1)),
       ),
       bytes = Buffer.from(pcm.buffer);
-    vi.stubGlobal(
-      "fetch",
-      vi
-        .fn()
-        .mockImplementation(() =>
+    post.mockImplementation(() =>
           Promise.resolve(
             new Response(bytes, { headers: { "X-Sample-Rate": "24000" } }),
           ),
-        ),
     );
     const base = inputSchema.parse({
       text: "Hello.",
@@ -114,6 +102,13 @@ describe("neural interoperability", () => {
     expect(loud.audio.readInt16LE(44 + 20)).toBeGreaterThan(
       quiet.audio.readInt16LE(44 + 20) * 1.9,
     );
+  });
+  it("distinguishes a slow response from an offline server", async () => {
+    const input = inputSchema.parse({ text: "Hello", voice: "indic:Aditi" });
+    post.mockRejectedValue(Object.assign(new Error("deadline"), { code: "NEURAL_TIMEOUT" }));
+    await expect(provider.synthesize(input)).rejects.toThrow("NEURAL_TIMEOUT");
+    post.mockRejectedValue(Object.assign(new Error("reset"), { code: "ECONNRESET" }));
+    await expect(provider.synthesize(input)).rejects.toThrow("NEURAL_CONNECTION");
   });
   it("validates custom voice direction length", () =>
     expect(

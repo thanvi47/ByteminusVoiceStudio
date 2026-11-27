@@ -867,6 +867,9 @@ audio {
 .editor-column {
   min-width: 0;
 }
+.editor-column > .audio-panel {
+  margin-top: 16px;
+}
 .editor-actions .generation-bar {
   margin-top: 16px;
   flex-wrap: wrap;

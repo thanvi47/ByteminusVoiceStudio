@@ -3,7 +3,7 @@ import { inputSchema, parseScript, voices } from "@/lib/script";
 import { provider, usage, neuralStatus } from "@/lib/tts";
 import { ZodError } from "zod";
 export const runtime = "nodejs";
-export const maxDuration = 800;
+export const maxDuration = 1300;
 export async function GET(
   _: Request,
   ctx: { params: Promise<{ action: string }> },
@@ -82,6 +82,10 @@ export async function POST(
         "Local neural server is unavailable. Start the studio with npm run dev:studio. No robotic fallback was used.",
         503,
       );
+    if (e instanceof Error && e.message === "NEURAL_TIMEOUT")
+      return error("CPU generation exceeded the waiting limit. Try a shorter script; the voice server may still be available.", 504);
+    if (e instanceof Error && e.message === "NEURAL_CONNECTION")
+      return error("The voice connection closed before generation finished. Check the local server log and retry with a shorter script.", 503);
     if (e instanceof Error && e.message.startsWith("NEURAL: "))
       return error(e.message.slice(8), 503);
     return error(

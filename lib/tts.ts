@@ -1,6 +1,7 @@
 import init from "@echogarden/espeak-ng-emscripten";
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { masterPcm } from "./audio-levels.mjs";
+import { postNeural } from "./neural-http";
 import {
   delivery,
   escapeXML,
@@ -78,10 +79,7 @@ async function neuralSynthesize(input: SynthesisInput) {
   // Natural engines ignore emotion; explicit manual sliders remain available.
   let response: Response;
   try {
-    response = await fetch("http://127.0.0.1:8123/synthesize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    response = await postNeural(JSON.stringify({
         text: input.text,
         voice: input.voice,
         emotion: input.emotion,
@@ -91,11 +89,14 @@ async function neuralSynthesize(input: SynthesisInput) {
         style: input.style,
         deliveryRate: 1,
         deliveryPitch: 1,
-      }),
-      signal: AbortSignal.timeout(650000),
-    });
-  } catch {
-    throw new Error("NEURAL_OFFLINE");
+      }));
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (code === "NEURAL_TIMEOUT") throw new Error("NEURAL_TIMEOUT");
+    if (code === "NEURAL_RESPONSE_LIMIT") throw new Error("AUDIO_LIMIT");
+    if (code === "ECONNREFUSED") throw new Error("NEURAL_OFFLINE");
+    console.error("Neural connection failed:", code ?? "unknown");
+    throw new Error("NEURAL_CONNECTION");
   }
   if (!response.ok) {
     let detail = "Neural speech failed.";

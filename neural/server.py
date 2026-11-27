@@ -180,7 +180,7 @@ def render(data):
                 {**data.model_dump(), "engine": engine}, ensure_ascii=False
             ).encode("utf-8"),
             capture_output=True,
-            timeout=600,
+            timeout=1200,
             cwd=ROOT,
         )
         if result.returncode:

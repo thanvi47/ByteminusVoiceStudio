@@ -750,6 +750,7 @@ export default function VoicePlayground({
               )}{" "}
               {busy ? `Generating… ${seconds}s` : "Generate a take"}
             </button>
+            {busy && seconds >= 240 && <p role="status">CPU-তে কাজ চলছে। দীর্ঘ script-এ ৫–১০ মিনিট বা বেশি লাগতে পারে। নতুন করে Generate চাপবেন না।</p>}
             <button onClick={() => onOpenStudio(request)}>
               Open in Voice studio
             </button>

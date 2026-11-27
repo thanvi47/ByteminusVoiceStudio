@@ -29,6 +29,8 @@ Open http://127.0.0.1:3000. Keep the terminal running. Setup installs isolated P
 
 After setup, `npm run dev` starts/reuses both services. First generation loads the chosen model; CPU generation can take longer than the audio duration. Parler is substantially slower and limited to 600 characters per request. See [NEURAL.md](docs/NEURAL.md).
 
+Expressive CPU requests can exceed five minutes for a paragraph. The local audio connection uses an explicit deadline instead of fetch's independent header timeout; the worker allows up to 20 minutes. A timeout or dropped connection is reported separately from an offline server. Do not submit the same script again while generation is pending. The audio preview sits directly under Generate in the script column.
+
 ## Features
 
 - TXT import, language detection, character/word counts, pause tags, browser-local projects and session audio history.

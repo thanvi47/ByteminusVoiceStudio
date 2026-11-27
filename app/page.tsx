@@ -448,9 +448,117 @@ export default function Studio() {
             <LoaderCircle size={16} />
           </span>
           {progress} {elapsed}s
+          {elapsed >= 240 && <span> · CPU-তে কাজ চলছে। দীর্ঘ expressive script-এ ৫–১০ মিনিট বা বেশি লাগতে পারে; আবার Generate চাপবেন না।</span>}
         </div>
       )}
     </div>
+  );
+  const audioPreview = (
+    <section className="audio-panel panel">
+      <div className="panel-header">
+        <h2>
+          <AudioLines size={18} /> Audio preview
+        </h2>
+        <span className="muted">
+          {active
+            ? `${active.duration.toFixed(1)} seconds · ${active.format.toUpperCase()}`
+            : "Your next creation lives here"}
+        </span>
+      </div>
+      {active ? (
+        <div className="player-content">
+          <p className="rendered-settings">
+            <strong>
+              {active.settingsTest
+                ? "Settings test"
+                : "Generated recording"}{" "}
+              · {voices.find((v) => v.id === active.voice)?.name}
+            </strong>
+            <br />
+            {active.input.emotion}{" "}
+            {voices.find((v) => v.id === active.voice)?.styleMode ===
+            "prompted"
+              ? "(model direction)"
+              : "(speed/pitch effect)"}{" "}
+            · Speed {active.input.rate.toFixed(2)}× · Pitch{" "}
+            {active.input.pitch.toFixed(2)}× · Intensity{" "}
+            {active.input.intensity}%
+          </p>
+          <div
+            className="waveform"
+            aria-label="Generated audio amplitude waveform"
+          >
+            {active.peaks.map((p, i) => (
+              <span
+                key={i}
+                style={{ height: `${Math.max(3, p * 100)}%` }}
+              />
+            ))}
+          </div>
+          <AudioPlayer
+            audioRef={audio}
+            key={active.id}
+            src={active.url}
+            preload="metadata"
+            onPlay={() => {
+              sampleAudio.current?.pause();
+              setPlayingSample(null);
+            }}
+          />
+          <div className="player-actions">
+            <label>
+              Playback speed
+              <select
+                aria-label="Playback speed"
+                onChange={(e) => {
+                  if (audio.current)
+                    audio.current.playbackRate = +e.target.value;
+                }}
+                defaultValue="1"
+              >
+                <option value="0.75">0.75×</option>
+                <option value="1">1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+              </select>
+            </label>
+            <button
+              onClick={() =>
+                download(
+                  active.url,
+                  `byteminus-${active.id.slice(0, 8)}.${active.format}`,
+                )
+              }
+            >
+              <Download size={15} /> Download{" "}
+              {active.format.toUpperCase()}
+            </button>
+            <button onClick={downloadSubtitles}>
+              Export SRT <span className="subtle-tag">ESTIMATED</span>
+            </button>
+            <button
+              className="icon-btn"
+              aria-label="Delete audio"
+              onClick={() => removeClip(active.id)}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="audio-empty">
+          <span className="empty-icon">
+            <AudioLines size={30} />
+          </span>
+          <h3>Let’s hear what you’ve got.</h3>
+          <p>
+            Write your script, pick a voice, and hit generate.
+            <br />
+            Your audio will appear here, ready to play and download.
+          </p>
+        </div>
+      )}
+    </section>
   );
   const choice = voices.find((v) => v.id === voice)!;
   if (auth === null)
@@ -793,6 +901,7 @@ export default function Studio() {
                     </div>
                   </section>
                   {generationControls}
+                  {audioPreview}
                 </div>
                 <section className="voice-panel panel">
                   <div className="panel-header">
@@ -1124,111 +1233,6 @@ export default function Studio() {
                   defaultVoice={voice}
                 />
               )}
-              <section className="audio-panel panel">
-                <div className="panel-header">
-                  <h2>
-                    <AudioLines size={18} /> Audio preview
-                  </h2>
-                  <span className="muted">
-                    {active
-                      ? `${active.duration.toFixed(1)} seconds · ${active.format.toUpperCase()}`
-                      : "Your next creation lives here"}
-                  </span>
-                </div>
-                {active ? (
-                  <div className="player-content">
-                    <p className="rendered-settings">
-                      <strong>
-                        {active.settingsTest
-                          ? "Settings test"
-                          : "Generated recording"}{" "}
-                        · {voices.find((v) => v.id === active.voice)?.name}
-                      </strong>
-                      <br />
-                      {active.input.emotion}{" "}
-                      {voices.find((v) => v.id === active.voice)?.styleMode ===
-                      "prompted"
-                        ? "(model direction)"
-                        : "(speed/pitch effect)"}{" "}
-                      · Speed {active.input.rate.toFixed(2)}× · Pitch{" "}
-                      {active.input.pitch.toFixed(2)}× · Intensity{" "}
-                      {active.input.intensity}%
-                    </p>
-                    <div
-                      className="waveform"
-                      aria-label="Generated audio amplitude waveform"
-                    >
-                      {active.peaks.map((p, i) => (
-                        <span
-                          key={i}
-                          style={{ height: `${Math.max(3, p * 100)}%` }}
-                        />
-                      ))}
-                    </div>
-                    <AudioPlayer
-                      audioRef={audio}
-                      key={active.id}
-                      src={active.url}
-                      preload="metadata"
-                      onPlay={() => {
-                        sampleAudio.current?.pause();
-                        setPlayingSample(null);
-                      }}
-                    />
-                    <div className="player-actions">
-                      <label>
-                        Playback speed
-                        <select
-                          aria-label="Playback speed"
-                          onChange={(e) => {
-                            if (audio.current)
-                              audio.current.playbackRate = +e.target.value;
-                          }}
-                          defaultValue="1"
-                        >
-                          <option value="0.75">0.75×</option>
-                          <option value="1">1×</option>
-                          <option value="1.25">1.25×</option>
-                          <option value="1.5">1.5×</option>
-                        </select>
-                      </label>
-                      <button
-                        onClick={() =>
-                          download(
-                            active.url,
-                            `byteminus-${active.id.slice(0, 8)}.${active.format}`,
-                          )
-                        }
-                      >
-                        <Download size={15} /> Download{" "}
-                        {active.format.toUpperCase()}
-                      </button>
-                      <button onClick={downloadSubtitles}>
-                        Export SRT <span className="subtle-tag">ESTIMATED</span>
-                      </button>
-                      <button
-                        className="icon-btn"
-                        aria-label="Delete audio"
-                        onClick={() => removeClip(active.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="audio-empty">
-                    <span className="empty-icon">
-                      <AudioLines size={30} />
-                    </span>
-                    <h3>Let’s hear what you’ve got.</h3>
-                    <p>
-                      Write your script, pick a voice, and hit generate.
-                      <br />
-                      Your audio will appear here, ready to play and download.
-                    </p>
-                  </div>
-                )}
-              </section>
               <footer className="workspace-footer">
                 <span>
                   <span className="shield">◇</span> Runs on your device. No
