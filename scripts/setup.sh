@@ -5,8 +5,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 ALL=0; INDIC=0; CLONING=0; TRANSCRIPTION=0; SKIP_MODELS=0; SKIP_WEB=0; DEVICE=auto
 usage() {
-  printf '%s\n' 'Usage: bash scripts/setup.sh [--all] [--bengali-expressive] [--cloning] [--transcription] [--device auto|cpu|cuda]' \
+  printf '%s\n' 'Usage: bash scripts/setup.sh [--all] [--bengali-expressive] [--cloning] [--transcription] [--device auto|cpu|cuda|rocm|xpu|mps]' \
     'Default: base Mithi/Kokoro + English Parler. --all adds Indic, cloning and transcription.' \
+    'Devices: auto, cpu, cuda (NVIDIA Linux), rocm (AMD Linux), xpu (Intel), mps (Apple). Windows DirectML uses setup-directml.ps1.' \
     'CI only: --skip-models --skip-web (checks packages, NOT ready-to-generate models).'
 }
 while [ "$#" -gt 0 ]; do
@@ -23,7 +24,7 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
-case "$DEVICE" in auto|cpu|cuda) ;; *) printf 'Invalid device\n' >&2; exit 1 ;; esac
+case "$DEVICE" in auto|cpu|cuda|rocm|xpu|mps) ;; *) printf 'Invalid device\n' >&2; exit 1 ;; esac
 OS="$(uname -s)"; ARCH="$(uname -m)"
 case "$OS/$ARCH" in
   Darwin/arm64) UV_TARGET=aarch64-apple-darwin ;;
@@ -32,7 +33,8 @@ case "$OS/$ARCH" in
   Linux/aarch64) UV_TARGET=aarch64-unknown-linux-gnu ;;
   *) printf 'Unsupported platform: %s/%s\n' "$OS" "$ARCH" >&2; exit 1 ;;
 esac
-if [ "$OS" = Darwin ] && [ "$DEVICE" = cuda ]; then printf 'CUDA is not available on macOS; use --device cpu or auto.\n' >&2; exit 1; fi
+if [ "$OS" = Darwin ] && [ "$DEVICE" != auto ] && [ "$DEVICE" != cpu ] && [ "$DEVICE" != mps ]; then printf 'macOS supports mps, cpu or auto in this installer.\n' >&2; exit 1; fi
+if [ "$OS" = Linux ] && [ "$DEVICE" = mps ]; then printf 'MPS requires macOS.\n' >&2; exit 1; fi
 for tool in node npm git curl tar; do
   command -v "$tool" >/dev/null 2>&1 || { printf 'Missing %s. Follow docs/INSTALL.mac-linux.bn.md prerequisites.\n' "$tool" >&2; exit 1; }
 done
@@ -55,6 +57,10 @@ if [ "$OS" = Darwin ]; then
   TORCH_INDEX=https://pypi.org/simple
 elif [ "$DEVICE" = cuda ] || { [ "$DEVICE" = auto ] && command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi --query-gpu=name --format=csv,noheader >/dev/null 2>&1; }; then
   TORCH_INDEX=https://download.pytorch.org/whl/cu128
+elif [ "$DEVICE" = rocm ] || { [ "$DEVICE" = auto ] && command -v rocminfo >/dev/null 2>&1 && rocminfo >/dev/null 2>&1; }; then
+  TORCH_INDEX=https://download.pytorch.org/whl/rocm6.4
+elif [ "$DEVICE" = xpu ] || { [ "$DEVICE" = auto ] && command -v xpu-smi >/dev/null 2>&1; }; then
+  TORCH_INDEX=https://download.pytorch.org/whl/xpu
 elif [ "$ARCH" = aarch64 ]; then
   TORCH_INDEX=https://pypi.org/simple
 fi

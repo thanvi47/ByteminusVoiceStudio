@@ -1,4 +1,4 @@
-param([switch]$Expressive, [ValidateSet('auto','cpu','cuda')][string]$Device='auto')
+param([switch]$Expressive, [ValidateSet('auto','cpu','cuda','xpu','directml')][string]$Device='auto')
 $ErrorActionPreference = 'Stop'
 $rootPath = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $rootPath
@@ -28,6 +28,14 @@ if ($Expressive) {
     Invoke-Uv pip install --python '.runtime/parler-env/Scripts/python.exe' -r 'neural/parler.lock.txt'
     & $pythonPath scripts/download-models.py parler
     if ($LASTEXITCODE -ne 0) { throw 'Expressive model download failed.' }
+}
+$adapters = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue
+if ($Device -eq 'directml' -or ($Device -eq 'auto' -and ($adapters.Name -join ' ') -match 'AMD|Radeon|Intel')) {
+    try { & "$PSScriptRoot/setup-directml.ps1" }
+    catch {
+        if ($Device -eq 'directml') { throw }
+        Write-Warning "Optional DirectML setup failed; CPU/native GPU remains available: $($_.Exception.Message)"
+    }
 }
 Write-Host 'Neural setup complete. Run npm run dev to open the studio.'
 Write-Host 'Bengali emotional voices (Indic) require a separate model: approve access at https://huggingface.co/ai4bharat/indic-parler-tts, then run .venv/Scripts/hf.exe auth login and ./scripts/setup-bengali-expressive.ps1.'

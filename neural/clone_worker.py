@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 from neural.hardware import runtime_profile
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 
 def decode_request(payload):
@@ -20,13 +21,13 @@ def decode_request(payload):
     return json.loads(payload.decode("utf-8"))
 
 
-def render(data):
+def render(data, hardware=None):
     import numpy as np
     import soundfile as sf
     import torch
     from omnivoice import OmniVoice
 
-    hardware = runtime_profile(torch)
+    hardware = hardware or runtime_profile(torch, engine="cloning")
     folder = ROOT / ".data/voices" / str(uuid.UUID(data["id"]))
     profile = json.loads((folder / "profile.json").read_text(encoding="utf-8"))
     reference, sr = sf.read(folder / "reference.wav", dtype="float32")
@@ -59,5 +60,12 @@ def render(data):
 if __name__ == "__main__":
     data = decode_request(sys.stdin.buffer.read())
     with contextlib.redirect_stdout(sys.stderr):
-        output = render(data)
+        import torch
+        from neural.accelerated import execute, report
+        # OmniVoice requires modern Torch; the isolated older DirectML stack cannot run it.
+        hardware = runtime_profile(torch, engine="cloning", requested="cpu" if os.environ.get("BYTEMINUS_DEVICE") == "directml" else None)
+        if os.environ.get("BYTEMINUS_DEVICE") == "directml":
+            hardware["reason"] = "OmniVoice DirectML unsupported; using CPU with the same voice model"
+        output, actual = execute(torch, hardware, lambda selected: render(data, selected), engine="cloning")
+        report(actual)
     sys.stdout.buffer.write(output)

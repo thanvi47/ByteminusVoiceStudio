@@ -1,4 +1,4 @@
-param([ValidateSet('auto','cpu','cuda')][string]$Device='auto')
+param([ValidateSet('auto','cpu','cuda','xpu','directml')][string]$Device='auto')
 $ErrorActionPreference='Stop'
 $rootPath=Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $rootPath

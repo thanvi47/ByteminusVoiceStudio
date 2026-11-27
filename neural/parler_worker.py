@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from neural.hardware import runtime_profile
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 
 def parts(text):
@@ -132,12 +133,12 @@ def apply_controls(audio, rate, pitch):
     return audio
 
 
-def load_model(engine="parler"):
+def load_model(engine="parler", profile=None):
     import torch
     from parler_tts import ParlerTTSForConditionalGeneration
     from transformers import AutoTokenizer
 
-    hardware = runtime_profile(torch)
+    hardware = profile or runtime_profile(torch, engine=engine)
     if engine not in {"parler", "indic"}:
         raise ValueError("Unknown expressive engine")
     folder = str(ROOT / ".models" / engine)
@@ -208,6 +209,7 @@ def synthesize(data, model, tokenizer):
             audio = resample_poly(audio, 24000 // factor, sr // factor)
             audio = apply_controls(audio, data["rate"], data["pitch"])
         audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+        if not np.isfinite(audio).all(): raise RuntimeError("Accelerator returned invalid audio samples")
         length += len(audio)
         if length > 600 * 24000:
             raise ValueError("Audio exceeds 10 minutes; generate shorter sections")
@@ -220,6 +222,13 @@ def synthesize(data, model, tokenizer):
 if __name__ == "__main__":
     data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     with contextlib.redirect_stdout(sys.stderr):
-        model, tokenizer = load_model(data.get("engine", "parler"))
-        output = synthesize(data, model, tokenizer)
+        import torch
+        from neural.accelerated import execute, report
+        engine = data.get("engine", "parler")
+        profile = runtime_profile(torch, engine=engine, requested=os.environ.get("BYTEMINUS_EXECUTION_BACKEND"))
+        def operation(selected):
+            model, tokenizer = load_model(engine, profile=selected)
+            return synthesize(data, model, tokenizer)
+        output, actual = execute(torch, profile, operation, engine=engine)
+        report(actual)
     sys.stdout.buffer.write(output)

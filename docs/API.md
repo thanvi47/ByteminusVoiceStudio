@@ -1,5 +1,7 @@
 # HTTP API
 
+> Hardware update: automatic CPU/CUDA/ROCm/XPU/MPS selection and experimental Windows DirectML. GPU tensor detection does not verify speech. **[Compatibility, tested limits and update commands](HARDWARE.bn.md)**.
+
 Errors use `{ "error": { "message": "..." } }`. Auth/session and usage responses disable caching. Do not expose this private single-user service publicly without additional abuse controls.
 
 | Method | Route | Behavior |
@@ -27,7 +29,7 @@ Synthesis JSON:
 {"text":"Hello [pause 500ms] world.","voice":"kokoro:af_heart","emotion":"Neutral","intensity":50,"rate":1,"pitch":1,"format":"wav","style":""}
 ```
 
-Neural text: 1–3,000 CPU characters, 6,000 on smaller usable CUDA GPUs or 12,000 on CUDA GPUs with at least 16 GB VRAM. Runtime limits are enforced server-side. Long scripts use sequential hardware-sized batches joined before mastering/encoding. Pauses: 0–10 seconds, at most 30; joined neural output: at most 10 minutes on CPU or 30 on CUDA. Legacy output keeps its 3,000-character/90-second cap; cloning is separate. Voice IDs are allowlisted by `/api/tts/voices` and `lib/voice-catalog.json`: e.g. `mithi:charvi`, `kokoro:af_heart`, `parler:Jon`. Legacy IDs remain explicit options. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. Mithi/Kokoro emotion effects are disabled; only explicit manual speed/pitch controls apply. Parler/Indic interpret emotion and freeform direction; `style` accepts up to 1,200 characters. Their numeric speed/pitch sliders are applied to audio after generation. Exact prompt response is not guaranteed.
+Neural text: 1–3,000 CPU characters, 6,000 on smaller usable accelerators or 12,000 on accelerators with at least 16 GB VRAM. Runtime limits are enforced server-side. Long scripts use sequential hardware-sized batches joined before mastering/encoding. Pauses: 0–10 seconds, at most 30; joined neural output: at most 10 minutes on CPU or 30 on CUDA. Legacy output keeps its 3,000-character/90-second cap; cloning is separate. Voice IDs are allowlisted by `/api/tts/voices` and `lib/voice-catalog.json`: e.g. `mithi:charvi`, `kokoro:af_heart`, `parler:Jon`. Legacy IDs remain explicit options. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. Mithi/Kokoro emotion effects are disabled; only explicit manual speed/pitch controls apply. Parler/Indic interpret emotion and freeform direction; `style` accepts up to 1,200 characters. Their numeric speed/pitch sliders are applied to audio after generation. Exact prompt response is not guaranteed.
 
 The voices response includes `neural.engines` and per-environment `neural.engineHardware` with device, thread count, VRAM and batch/script budgets. Setup and troubleshooting: [INSTALL.bn.md](INSTALL.bn.md). Neural inference goes to a fixed loopback-only Python service; no client-provided provider URL, arbitrary subprocess command or paid service is accepted. Failures never fall back to robotic audio. Local CPU requests can take minutes; hosted serverless runtime compatibility is not promised.
 

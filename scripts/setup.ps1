@@ -3,7 +3,7 @@ param(
     [switch]$BengaliExpressive,
     [switch]$Cloning,
     [switch]$Transcription,
-    [ValidateSet('auto','cpu','cuda')][string]$Device='auto'
+    [ValidateSet('auto','cpu','cuda','xpu','directml')][string]$Device='auto'
 )
 $ErrorActionPreference='Stop'
 $rootPath=Split-Path -Parent $PSScriptRoot

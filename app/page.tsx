@@ -63,6 +63,11 @@ type Project = {
   voice: SynthesisInput["voice"];
   created: string;
 };
+type Hardware = {
+  device: string; backend?: string; name: string; platform?: string;
+  cpuThreads: number; maxScriptCharacters?: number; reason?: string;
+  validation?: string; mixedOperations?: boolean; executionMode?: string;
+};
 const sample =
   "স্বাগতম ByteminusVoiceStudio-তে। আপনার ভাবনাকে কণ্ঠ দিন। [pause 500ms] আজ থেকেই শুরু হোক নতুন গল্প।";
 const sections = [
@@ -111,8 +116,8 @@ export default function Studio() {
   const [engineFilter, setEngineFilter] = useState("all");
   const [engines, setEngines] = useState<Record<string, boolean>>({});
   const [playgroundEngine, setPlaygroundEngine] = useState("parler");
-  const [hardware, setHardware] = useState<{ device: string; name: string; platform?: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string } | null>(null);
-  const [engineHardware, setEngineHardware] = useState<Record<string, { device: string; name: string; platform?: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string }>>({});
+  const [hardware, setHardware] = useState<Hardware | null>(null);
+  const [engineHardware, setEngineHardware] = useState<Record<string, Hardware>>({});
   const [elapsed, setElapsed] = useState(0);
   const [previewSamples, setPreviewSamples] = useState<PreviewSamples>({});
   const [playingSample, setPlayingSample] = useState<string | null>(null);
@@ -168,6 +173,16 @@ export default function Studio() {
       })
       .catch(() => {});
   }, [auth, clips]);
+  useEffect(() => {
+    if (!auth) return;
+    const refresh = () => fetch("/api/tts/voices", { cache: "no-store" })
+      .then((r) => r.json()).then((d) => {
+        setHardware(d.neural?.hardware ?? null);
+        setEngineHardware(d.neural?.engineHardware ?? {});
+      }).catch(() => {});
+    const timer = setInterval(refresh, 15000);
+    return () => clearInterval(timer);
+  }, [auth]);
   useEffect(() => {
     if (!busy) return;
     setElapsed(0);
@@ -375,7 +390,7 @@ export default function Studio() {
     normalizeAudio,
   };
   const choice = voices.find((v) => v.id === voice)!;
-  const activeHardware = engineHardware[section === "Voice playground" ? playgroundEngine : choice.engine] ?? hardware;
+  const activeHardware = section === "Voice cloning" ? null : engineHardware[section === "Voice playground" ? playgroundEngine : choice.engine] ?? hardware;
   const scriptLimit = choice.neural ? activeHardware?.maxScriptCharacters ?? 3000 : 3000;
   const currentResult =
     active &&
@@ -691,7 +706,7 @@ export default function Studio() {
             Workspace <span>/</span> <b>{section}</b>
           </span>
           <div className="top-actions">
-            {activeHardware && <span className="engine-pill" title={activeHardware.reason || activeHardware.name}>{activeHardware.device === "cuda" ? activeHardware.name : activeHardware.device === "unavailable" ? "Runtime unavailable" : `CPU · ${activeHardware.cpuThreads} threads`} · Auto</span>}
+            {activeHardware && <span className="engine-pill" title={[activeHardware.name, activeHardware.validation, activeHardware.executionMode, activeHardware.reason].filter(Boolean).join(" · ")}>{activeHardware.device === "unavailable" ? "Runtime unavailable" : activeHardware.device === "cpu" ? `CPU · ${activeHardware.cpuThreads} threads` : `${(activeHardware.backend ?? activeHardware.device).toUpperCase()} · ${activeHardware.name}`}{activeHardware.mixedOperations ? " · CPU + GPU" : ""} · {activeHardware.validation === "speech generated" ? "Last render" : "Detected; render unverified"}</span>}
             <span className="engine-pill">
               <span />{" "}
               {section === "Voice playground" ? (

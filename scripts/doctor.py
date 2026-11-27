@@ -2,6 +2,7 @@
 import argparse
 import importlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -58,7 +59,7 @@ def probe(profile, packages_only=False):
         try:
             import torch
             from neural.hardware import runtime_profile
-            hardware = runtime_profile(torch)
+            hardware = runtime_profile(torch, engine="natural" if profile == "base" else "cloning" if profile == "cloning" else "expressive", requested="cpu" if os.environ.get("BYTEMINUS_DEVICE") == "directml" else None)
         except Exception as exc:
             errors.append(f'Hardware: {str(exc)[:200]}')
     return dict(profile=profile, errors=errors, hardware=hardware)
@@ -102,5 +103,14 @@ if __name__ == '__main__':
         except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
             failures += 1
             print(f'  FAIL {type(exc).__name__}. Fix: {FIXES[profile]}', flush=True)
+    directml = ROOT / '.runtime/directml-env/Scripts/python.exe'
+    if sys.platform == 'win32' and directml.exists():
+        print('Checking experimental DirectML environment...', flush=True)
+        check = subprocess.run([str(directml), '-c', 'import torch_directml, torch, numpy, kokoro, parler_tts, click'], cwd=ROOT, capture_output=True, timeout=120)
+        if check.returncode:
+            failures += 1
+            print('  FAIL DirectML packages. Fix: ./scripts/setup-directml.ps1', flush=True)
+        else:
+            print('  OK DirectML packages; actual speech GPU support is checked at generation time.', flush=True)
     print('Checks passed.' if not failures else f'{failures} profile(s) need attention.', flush=True)
     sys.exit(1 if failures else 0)

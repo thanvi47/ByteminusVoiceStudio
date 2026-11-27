@@ -1,5 +1,15 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.0
+
+- Added probed CUDA, ROCm, Intel XPU and Apple MPS device selection, with installer flags for each supported platform.
+- Added an isolated experimental Windows DirectML environment for AMD/Intel DirectX 12 adapters. Local GPU speech operators failed; same-model CPU fallback generated Bengali and English audio. DirectML acceleration is not verified.
+- Added automatic same-model CPU retry, backend/fallback diagnostics, and a studio status that distinguishes detection from actual generation.
+- Added hardware compatibility and update instructions in `HARDWARE.bn.md`. Intel Mac native neural installation remains unsupported by the pinned Torch wheel.
+- Verified web tests, hardware/protocol tests, production build and local package checks. Hardware-specific speech benchmarks require the corresponding GPU; mock selection tests do not establish GPU audio quality or speed.
+
+> Hardware update: automatic CPU/CUDA/ROCm/XPU/MPS selection and experimental Windows DirectML. GPU tensor detection does not verify speech. **[Compatibility, tested limits and update commands](HARDWARE.bn.md)**.
+
 Free local Bengali/English text to speech with Mithi, Kokoro, English Parler and optional Bengali Indic Parler, WAV/MP3 export, estimated SRT, voice directions, CPU/CUDA selection and optional consent-based voice cloning.
 
 ## Download and install on Windows
@@ -22,7 +32,7 @@ bash scripts/setup.sh
 npm run dev
 ```
 
-`bash scripts/setup.sh --all` includes optional models after your own HF approval. Apple Silicon macOS currently runs on CPU, not MPS; Intel macOS is unsupported by the pinned PyTorch wheel. Ubuntu/Linux supports CPU and compatible NVIDIA CUDA. AMD DirectML/ROCm acceleration is not implemented; an AMD RX 570 uses CPU. Unix CI checks package installation/imports without model downloads; those checks are not full neural-generation benchmarks.
+`bash scripts/setup.sh --all` includes optional models after your own HF approval. Apple Silicon macOS probes MPS with CPU fallback; Intel macOS is unsupported by the pinned PyTorch wheel. Ubuntu/Linux supports CPU and compatible NVIDIA CUDA. Windows DirectML is experimental; AMD RX 570 may fall back to CPU. Supported Linux AMD GPUs can use ROCm. Unix CI checks package installation/imports without model downloads; those checks are not full neural-generation benchmarks.
 
 The ZIP contains tracked source, dependency locks, setup/download scripts, documentation and generic demo samples. **Python environments, node_modules, multi-GB model weights, credentials and private recordings are not included.** Setup downloads them separately as needed. Synthesis needs the local Python service on the same computer. This is a source package, not a standalone Windows executable.
 

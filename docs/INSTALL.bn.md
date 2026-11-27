@@ -1,5 +1,7 @@
 # ByteminusVoiceStudio — নতুন PC-তে ধাপে ধাপে setup
 
+> Hardware update: automatic CPU/CUDA/ROCm/XPU/MPS selection and experimental Windows DirectML. GPU tensor detection does not verify speech. **[Compatibility, tested limits and update commands](HARDWARE.bn.md)**.
+
 Free local বাংলা/English AI text-to-speech, expressive voice, WAV/MP3 ও estimated SRT। কোনো paid speech API লাগে না। এই guide **Windows 10/11 64-bit, PowerShell**-এর জন্য। [macOS/Linux/Ubuntu guide এখানে](INSTALL.mac-linux.bn.md)।
 
 ## ১. প্রয়োজনীয় software ও hardware
@@ -9,7 +11,7 @@ Free local বাংলা/English AI text-to-speech, expressive voice, WAV/MP3 
 - Internet এবং বড় model/package download-এর জন্য যথেষ্ট disk space। সব optional feature-এর জন্য কয়েক দশ GB খালি রাখা ব্যবহারিকভাবে ভালো; মাপ feature অনুযায়ী বদলায়।
 - বড় expressive model-এর জন্য 16 GB RAM ভালো starting point; কম RAM-এ ধীর হতে পারে। এখানে Ryzen 7/16 GB CPU-তে পরীক্ষা হয়েছে।
 - NVIDIA GPU থাকলে উপযুক্ত official NVIDIA driver আগে লাগবে। GPU ছাড়াও CPU-তে চলে। Setup Python, uv ও app-এর Python packages project-এর ভেতর install করে; global Python/pip লাগবে না।
-- AMD Radeon GPU থাকলেই CUDA ব্যবহার করা যায় না। এই সংস্করণে AMD DirectML/ROCm acceleration নেই; RX 570-এর মতো AMD PC CPU-তে চলবে। `-Device cuda` কেবল compatible NVIDIA setup-এর জন্য।
+- AMD Radeon GPU থাকলেই CUDA ব্যবহার করা যায় না। Windows-এ experimental DirectML আছে; RX 570-তে speech operator না চললে CPU fallback হবে। `-Device cuda` কেবল compatible NVIDIA setup-এর জন্য।
 
 ```powershell
 node --version
@@ -100,7 +102,7 @@ Header-এ active voice-এর runtime দেখা যায়। CUDA availabili
 | Usable CUDA, VRAM <16 GB | 6,000 | 600 |
 | Usable CUDA, VRAM ≥16 GB | 12,000 | 1,200 |
 
-বড় script sequential sections থেকে এক audio-তে জোড়া হয়। GPU selection-এর সময় অন্তত 6 GB free VRAM লাগে। Cloning-এর আলাদা 600-character/90-second limit আছে। Apple MPS/AMD DirectML enabled নয়। এই CPU-only PC-তে RTX 5090 inference সরাসরি benchmark করা যায়নি।
+বড় script sequential sections থেকে এক audio-তে জোড়া হয়। GPU selection-এর সময় অন্তত 6 GB free VRAM লাগে। Cloning-এর আলাদা 600-character/90-second limit আছে। Apple MPS ও experimental Windows DirectML selection আছে; এই PC-তে RTX 5090 benchmark করা যায়নি।
 
 NVIDIA support install/repair: `./scripts/setup.ps1 -Device cuda`। Compatible driver লাগবে। CPU packages force করতে `-Device cpu`। চালুর আগে optional overrides: `$env:BYTEMINUS_CPU_THREADS="8"`, `$env:BYTEMINUS_DEVICE="cpu"` বা `"cuda"`। Default auto; explicit unavailable CUDA স্পষ্ট error দেয়। পরিবর্তনের পরে পুরোনো service বন্ধ করুন।
 

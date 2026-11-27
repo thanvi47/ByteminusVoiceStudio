@@ -1,10 +1,12 @@
 # macOS ও Linux/Ubuntu setup — ByteminusVoiceStudio
 
+> Hardware update: automatic CPU/CUDA/ROCm/XPU/MPS selection and experimental Windows DirectML. GPU tensor detection does not verify speech. **[Compatibility, tested limits and update commands](HARDWARE.bn.md)**.
+
 Windows guide: [INSTALL.bn.md](INSTALL.bn.md)। এখানে Terminal/Bash ব্যবহার করবেন, PowerShell `.ps1` নয়। কোনো paid speech API লাগে না।
 
 ## Platform ও সীমা
 
-- **macOS Apple Silicon (M1/M2/M3/M4 ও পরবর্তী arm64)**: native arm64 Terminal/Node ব্যবহার করুন; Rosetta x86_64 session নয়। বর্তমান adapter **CPU** ব্যবহার করে; Apple Metal/MPS acceleration enabled নয়। macOS 15 এখানে CI target; অন্য OS version-এর package availability আলাদা হতে পারে।
+- **macOS Apple Silicon (M1/M2/M3/M4 ও পরবর্তী arm64)**: native arm64 Terminal/Node ব্যবহার করুন; Rosetta x86_64 session নয়। বর্তমান adapter Apple Metal/MPS probe করে; unsupported operation হলে CPU fallback। macOS 15 এখানে CI target; অন্য OS version-এর package availability আলাদা হতে পারে।
 - **Intel Mac**: pinned PyTorch 2.8 neural stack-এর official macOS x86_64 wheel নেই। Installer শুরুতেই থামে। পুরোনো Torch বসিয়ে dependency ভেঙে ফেলবেন না। [Upstream deprecation](https://dev-discuss.pytorch.org/t/pytorch-macos-x86-builds-deprecation-starting-january-2024/1690)।
 - **Ubuntu 22.04/24.04 x86_64 / glibc Linux**: CPU এবং compatible NVIDIA driver থাকলে CUDA। Linux aarch64 path আছে, কিন্তু x86_64-এর সমান verification দাবি করা হচ্ছে না। Alpine/musl supported নয়।
 - Node.js **22+** দরকার; 22 পরীক্ষিত version। Model/package download-এর জন্য কয়েক দশ GB free disk এবং expressive model-এর জন্য 16 GB RAM ব্যবহারিক starting point। Model weights ও Python environments GitHub source ZIP-এ থাকে না।
@@ -118,7 +120,7 @@ npm run dev
 | espeak/libsndfile missing | উপরের brew/apt native dependencies install করুন; doctor-এর error দেখুন। |
 | No matching wheel / package build failed | OS/CPU ও Node/Python version মিলান; compiler tools install করুন। Logs ছাড়া পুরোনো random Torch/NumPy বসাবেন না। |
 | Indic 401/403 | নিজের HF account-এ gate approval, read-token scope, `.venv/bin/hf auth login`, তারপর Bengali setup। |
-| CUDA unavailable | Driver ও CUDA PyTorch মিলান; `--device cpu` fallback। Mac GPU বর্তমানে ব্যবহৃত হয় না। |
+| CUDA unavailable | Driver ও CUDA PyTorch মিলান; `--device cpu` fallback। Apple Silicon-এ MPS probe হয়; unsupported speech operation হলে CPU fallback। |
 | Port 3000/8123 occupied | নিজের পুরোনো app terminal বন্ধ করুন; অন্য software-এর process অন্ধভাবে kill নয়। |
 | Wrong interpreter after moving folder | নতুন folder-এ fresh environments setup করুন। Model/private data আলাদা রাখুন। |
 

@@ -1,4 +1,12 @@
 function Get-TorchIndex([string]$Device = 'auto') {
+    if ($Device -eq 'xpu') { return 'https://download.pytorch.org/whl/xpu' }
+    if ($Device -eq 'auto') {
+        $adapters = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue
+        if (($adapters.Name -join ' ') -match 'Intel.*Arc' -and ($adapters.Name -join ' ') -notmatch 'NVIDIA') {
+            Write-Host 'Selecting official Intel XPU PyTorch wheels. A supported Intel driver/GPU is required.'
+            return 'https://download.pytorch.org/whl/xpu'
+        }
+    }
     $useCuda = $Device -eq 'cuda'
     if ($Device -eq 'auto') {
         $smi = Get-Command nvidia-smi -ErrorAction SilentlyContinue

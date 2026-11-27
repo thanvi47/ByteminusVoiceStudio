@@ -15,13 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("HF_HOME", str(ROOT / ".cache" / "huggingface"))
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
-from neural.hardware import runtime_profile
+from neural.hardware import runtime_profile, cpu_fallback
 
-HARDWARE = runtime_profile(torch)
+HARDWARE = runtime_profile(torch, engine="natural", requested="cpu" if os.environ.get("BYTEMINUS_DEVICE") == "directml" else None)
 CPU_THREADS = HARDWARE["cpuThreads"]
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 CATALOG = {
@@ -49,6 +50,25 @@ if PARLER_PYTHON.exists():
                                    "reason": "The expressive Python environment could not initialize. Check the neural server log."}
     except (OSError, subprocess.TimeoutExpired, ValueError):
         EXPRESSIVE_HARDWARE = {**HARDWARE, "device": "unavailable", "name": "Expressive runtime unavailable"}
+
+
+ENGINE_HARDWARE = {"mithi": dict(HARDWARE), "kokoro": dict(HARDWARE),
+                   "parler": dict(EXPRESSIVE_HARDWARE), "indic": dict(EXPRESSIVE_HARDWARE)}
+DIRECTML_PYTHON = ROOT / ".runtime/directml-env/Scripts/python.exe"
+if os.name == "nt" and DIRECTML_PYTHON.exists() and os.environ.get("BYTEMINUS_DEVICE", "auto") in {"auto", "directml"}:
+    try:
+        probe = subprocess.run([str(DIRECTML_PYTHON), str(ROOT / "neural/probe_hardware.py"), "--backend", "directml"],
+                               capture_output=True, timeout=45, cwd=ROOT)
+        if probe.returncode == 0:
+            directml_profile = json.loads(probe.stdout)
+            for engine, profile in ENGINE_HARDWARE.items():
+                if profile["device"] in {"cpu", "unavailable"}: ENGINE_HARDWARE[engine] = dict(directml_profile)
+        elif os.environ.get("BYTEMINUS_DEVICE") == "directml":
+            raise RuntimeError("DirectML runtime could not initialize. Run scripts/setup-directml.ps1 and check the GPU driver.")
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        if os.environ.get("BYTEMINUS_DEVICE") == "directml": raise
+if os.environ.get("BYTEMINUS_DEVICE") == "directml" and not DIRECTML_PYTHON.exists():
+    raise RuntimeError("DirectML environment missing. Run ./scripts/setup-directml.ps1 first.")
 
 
 class Input(BaseModel):
@@ -94,13 +114,13 @@ def installed():
         ),
         "kokoro": (ROOT / ".models/kokoro/kokoro-v1_0.pth").exists(),
         "parler": (ROOT / ".models/parler/model.safetensors").exists()
-        and PARLER_PYTHON.exists() and EXPRESSIVE_HARDWARE["device"] != "unavailable",
+        and (PARLER_PYTHON.exists() or DIRECTML_PYTHON.exists()) and ENGINE_HARDWARE["parler"]["device"] != "unavailable",
         "indic": all((ROOT / file).is_file() for file in [
             ".models/indic/model.safetensors", ".models/indic/config.json",
             ".models/indic/tokenizer.json", ".models/indic/tokenizer_config.json",
             ".models/indic-description/spiece.model", ".models/indic-description/config.json",
         ])
-        and PARLER_PYTHON.exists() and EXPRESSIVE_HARDWARE["device"] != "unavailable",
+        and (PARLER_PYTHON.exists() or DIRECTML_PYTHON.exists()) and ENGINE_HARDWARE["indic"]["device"] != "unavailable",
     }
 
 
@@ -111,7 +131,7 @@ def health():
         "engines": installed(),
         "device": HARDWARE["device"],
         "hardware": HARDWARE,
-        "engineHardware": {"mithi": HARDWARE, "kokoro": HARDWARE, "parler": EXPRESSIVE_HARDWARE, "indic": EXPRESSIVE_HARDWARE},
+        "engineHardware": ENGINE_HARDWARE,
         "cpuThreads": CPU_THREADS,
         "logicalProcessors": os.cpu_count() or 1,
         "loaded": list(loaded),
@@ -154,20 +174,20 @@ def model_for(engine):
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        loaded[engine] = module.Mithi(str(ROOT / ".models/mithi"), device=HARDWARE["device"])
+        loaded[engine] = module.Mithi(str(ROOT / ".models/mithi"), device=ENGINE_HARDWARE[engine]["device"])
     elif engine == "kokoro":
         from kokoro import KModel, KPipeline
 
         model = (
             KModel(
                 config=str(ROOT / ".models/kokoro/config.json"),
-                model=str(ROOT / ".models/kokoro/kokoro-v1_0.pth"),
+                model=str(ROOT / ".models/kokoro/kokoro-v1_0.pth"), disable_complex=True,
             )
-            .to(HARDWARE["device"])
+            .to(ENGINE_HARDWARE[engine]["device"])
             .eval()
         )
         loaded[engine] = {
-            lang: KPipeline(lang_code=lang, model=model, device=HARDWARE["device"])
+            lang: KPipeline(lang_code=lang, model=model, device=ENGINE_HARDWARE[engine]["device"])
             for lang in ["a", "b"]
         }
     return loaded[engine]
@@ -184,7 +204,9 @@ def render(data):
         raise HTTPException(
             503, f"{engine} is not installed. Run the neural setup script."
         )
-    if engine in {"parler", "indic"}:
+    directml = ENGINE_HARDWARE[engine].get("backend") == "directml"
+    isolated_directml = directml or (engine in {"parler", "indic"} and not PARLER_PYTHON.exists() and DIRECTML_PYTHON.exists())
+    if engine in {"parler", "indic"} or directml:
         # Separate environment avoids incompatible Transformers requirements and releases RAM after each request.
         loaded.clear()
         gc.collect()
@@ -194,19 +216,27 @@ def render(data):
             data.text
         )  # Validate tags before handing text to the isolated worker.
         result = subprocess.run(
-            [str(PARLER_PYTHON), str(ROOT / "neural/parler_worker.py")],
+            [str(DIRECTML_PYTHON if isolated_directml else PARLER_PYTHON), str(ROOT / ("neural/device_worker.py" if isolated_directml else "neural/parler_worker.py"))],
             input=json.dumps(
                 {**data.model_dump(), "engine": engine}, ensure_ascii=False
             ).encode("utf-8"),
             capture_output=True,
             timeout=1200,
             cwd=ROOT,
+            env={**os.environ, "BYTEMINUS_EXECUTION_BACKEND": ENGINE_HARDWARE[engine].get("backend", "cpu")},
         )
         if result.returncode:
             print(result.stderr.decode(errors="replace")[-3000:], flush=True)
+            if ENGINE_HARDWARE[engine]["device"] != "cpu" and os.environ.get("BYTEMINUS_DEVICE", "auto") == "auto":
+                ENGINE_HARDWARE[engine] = cpu_fallback(torch, ENGINE_HARDWARE[engine], "isolated accelerator worker failed", engine=engine)
+                return render(data)
             raise HTTPException(
                 503, "Expressive engine failed. Check the local neural server log."
             )
+        for line in result.stderr.decode(errors="replace").splitlines():
+            if line.startswith("BYTEMINUS_RUNTIME:"):
+                try: ENGINE_HARDWARE[engine] = json.loads(line.split(":", 1)[1])
+                except ValueError: pass
         return result.stdout, 24000
     model = model_for(engine)
     chunks = []
@@ -285,7 +315,17 @@ def synthesize(data: Input):
         raise HTTPException(429, "Local neural engine is busy.")
     started = time.monotonic()
     try:
-        pcm, sr = render(data)
+        engine = CATALOG[data.voice]["engine"]
+        try:
+            pcm, sr = render(data)
+        except (RuntimeError, NotImplementedError) as exc:
+            if ENGINE_HARDWARE[engine]["device"] == "cpu" or os.environ.get("BYTEMINUS_DEVICE", "auto") != "auto": raise
+            profile = ENGINE_HARDWARE[engine]
+            loaded.pop(engine, None)
+            gc.collect()
+            ENGINE_HARDWARE[engine] = cpu_fallback(torch, profile, exc, engine=engine)
+            pcm, sr = render(data)
+        ENGINE_HARDWARE[engine]["validation"] = "speech generated"
         print(
             f"{data.voice}: {len(pcm) / (2 * sr):.2f}s audio in {time.monotonic() - started:.2f}s",
             flush=True,
@@ -293,7 +333,7 @@ def synthesize(data: Input):
         return Response(
             pcm,
             media_type="application/octet-stream",
-            headers={"X-Sample-Rate": str(sr)},
+            headers={"X-Sample-Rate": str(sr), "X-Speech-Backend": ENGINE_HARDWARE[engine].get("backend", "cpu")},
         )
     except HTTPException:
         raise
