@@ -16,6 +16,7 @@ import {
   DELETE as deleteClone,
 } from "../app/api/clones/[id]/route";
 import { POST as cloneGenerate } from "../app/api/clones/generate/route";
+import { POST as transcribeClone } from "../app/api/clones/transcribe/route";
 import { voices } from "../lib/script";
 const ctx = (action: string) => ({ params: Promise.resolve({ action }) });
 const req = (path: string, body: unknown) =>
@@ -44,6 +45,7 @@ describe("API routes", () => {
     expect((await saveClone(req("clones", {}))).status).toBe(401);
     expect((await deleteClone(req("clones/id", {}), id)).status).toBe(401);
     expect((await cloneGenerate(req("clones/generate", {}))).status).toBe(401);
+    expect((await transcribeClone(req("clones/transcribe", {}))).status).toBe(401);
   });
   it("rejects foreign origins before touching private clone storage", async () => {
     vi.stubEnv("NODE_ENV", "development");
@@ -56,10 +58,17 @@ describe("API routes", () => {
       });
     expect((await saveClone(foreign())).status).toBe(403);
     expect((await cloneGenerate(foreign())).status).toBe(403);
+    expect((await transcribeClone(foreign())).status).toBe(403);
     expect(
       (await deleteClone(foreign(), { params: Promise.resolve({ id: "bad" }) }))
         .status,
     ).toBe(403);
+  });
+  it("rejects unconsented or malformed reference transcription before launching a model", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("APP_ACCESS_PASSWORD", "");
+    expect((await transcribeClone(req("clones/transcribe", { audio: "YQ==", language: "bn", consent: false }))).status).toBe(400);
+    expect((await transcribeClone(req("clones/transcribe", { audio: "YQ==", language: "bn", consent: true }))).status).toBe(400);
   });
   it("protects every TTS endpoint", async () => {
     expect((await GET(req("tts/voices", {}), ctx("voices"))).status).toBe(401);

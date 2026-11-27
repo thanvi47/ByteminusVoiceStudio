@@ -1527,6 +1527,20 @@ audio {
 .clone-layout > .error {
   grid-column: 1/-1;
 }
+.clone-notice {
+  grid-column: 1/-1;
+  padding: 16px;
+  border-radius: 8px;
+  line-height: 1.6;
+}
+#clone-save-help {
+  font-size: 14px;
+  line-height: 1.7;
+}
+#clone-save-help ul {
+  margin: 8px 0 0;
+  padding-inline-start: 22px;
+}
 .clone-panel {
   padding: 24px;
   display: flex;

@@ -25,6 +25,10 @@ This project uses free and open source software. The npm lockfile records exact 
 | OmniVoice inference code (optional) | Apache-2.0 | https://github.com/k2-fsa/OmniVoice |
 | OmniVoice pretrained weights (optional, downloaded separately) | CC-BY-NC per upstream model card | https://huggingface.co/k2-fsa/OmniVoice |
 | Bundled Higgs Audio v2 tokenizer (optional, downloaded separately) | Boson Higgs Audio 2 Community License | https://huggingface.co/k2-fsa/OmniVoice/blob/main/audio_tokenizer/LICENSE |
+| faster-whisper / Whisper small (optional transcription) | MIT | https://github.com/SYSTRAN/faster-whisper / https://huggingface.co/Systran/faster-whisper-small |
+| CTranslate2 (optional transcription) | MIT | https://github.com/OpenNMT/CTranslate2 |
+| PyAV (optional transcription) | BSD-3-Clause; bundled FFmpeg retains its own notices | https://github.com/PyAV-Org/PyAV |
+| ONNX Runtime (optional transcription) | MIT | https://github.com/microsoft/onnxruntime |
 
 The cloning engine's weight licenses differ from its code license. Free noncommercial use does not imply unrestricted commercial rights or an OSI-approved weight license. The app does not redistribute these weights. Its generic committed voice previews use Mithi/Kokoro/Parler only. Private clone recordings and generated cloning test audio must never be committed.
 

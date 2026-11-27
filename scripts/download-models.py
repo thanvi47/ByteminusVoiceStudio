@@ -8,6 +8,11 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {
+    "whisper": (
+        "Systran/faster-whisper-small",
+        "536b0662742c02347bc0e980a01041f333bce120",
+        lambda p: p in {"README.md", "config.json", "model.bin", "tokenizer.json", "vocabulary.txt"},
+    ),
     "indic": (
         "ai4bharat/indic-parler-tts",
         "660bc53c64ae83150613264111708a0465211237",

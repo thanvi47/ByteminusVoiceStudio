@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, LoaderCircle, Mic2, Trash2, Upload } from "lucide-react";
 import { srt } from "@/lib/script";
 import type { CloneProfile } from "@/lib/clone";
+import { cloneFormIssues } from "@/lib/clone-form";
 import AudioPlayer from "./audio-player";
 
 function download(blob: Blob, name: string) {
@@ -70,6 +71,9 @@ export default function VoiceCloning() {
     [format, setFormat] = useState<"wav" | "mp3">("wav");
   const [busy, setBusy] = useState(false),
     [saving, setSaving] = useState(false),
+    [transcribing, setTranscribing] = useState(false),
+    [referenceLanguage, setReferenceLanguage] = useState<"bn" | "en">("bn"),
+    [notice, setNotice] = useState(""),
     [elapsed, setElapsed] = useState(0),
     [error, setError] = useState("");
   const [outputGain, setOutputGain] = useState(1),
@@ -85,6 +89,8 @@ export default function VoiceCloning() {
     }>();
   const previewRef = useRef(""),
     resultRef = useRef("");
+  const requestVersion = useRef(0);
+  const scriptRef = useRef<HTMLTextAreaElement>(null);
   async function refresh() {
     const r = await fetch("/api/clones", { cache: "no-store" });
     if (!r.ok) throw new Error("Unable to load saved voices.");
@@ -100,6 +106,7 @@ export default function VoiceCloning() {
   useEffect(() => {
     void refresh().catch((e) => setError(e.message));
     return () => {
+      requestVersion.current++;
       URL.revokeObjectURL(previewRef.current);
       URL.revokeObjectURL(resultRef.current);
     };
@@ -112,7 +119,9 @@ export default function VoiceCloning() {
   }, [busy]);
   async function load(file?: File) {
     if (!file) return;
+    const version = ++requestVersion.current;
     setError("");
+    setNotice("");
     setBuffer(undefined);
     setPreview("");
     setTranscript("");
@@ -124,6 +133,7 @@ export default function VoiceCloning() {
     const ctx = new AudioContext();
     try {
       const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+      if (version !== requestVersion.current) return;
       if (decoded.duration < 3 || decoded.duration > 120)
         throw new Error(
           "Upload 3–120 seconds of speech; 30 seconds is ideal for choosing a clean part.",
@@ -159,10 +169,39 @@ export default function VoiceCloning() {
     end - start >= 3 &&
     end - start <= 10,
   );
+  const issues = cloneFormIssues({ hasAudio: Boolean(buffer), validRange: valid, name, transcript, consent });
+  const locked = saving || busy || transcribing;
+  async function transcribe() {
+    if (!buffer || !valid || locked) return;
+    if (!consent) { setError("আগে নিজের কণ্ঠ বা অনুমতি থাকার ঘরে টিক দিন। Confirm voice permission first."); return; }
+    const version = ++requestVersion.current;
+    setTranscribing(true);
+    setError("");
+    setNotice("");
+    try {
+      const wav = await referenceWav(buffer, start, end);
+      const r = await fetch("/api/clones/transcribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: wav.base64, language: referenceLanguage, consent }),
+      });
+      const data = await r.json();
+      if (version !== requestVersion.current) return;
+      if (!r.ok) throw new Error(data.error?.message ?? "Transcription failed.");
+      setTranscript(data.text);
+      setNotice("কথাগুলো লেখা হয়েছে। নির্বাচিত অংশ শুনে ভুল থাকলে ঠিক করে Save voice চাপুন। Review the transcript before saving.");
+    } catch (e) {
+      if (version === requestVersion.current) setError(e instanceof Error ? e.message : "Transcription failed.");
+    } finally {
+      if (version === requestVersion.current) setTranscribing(false);
+    }
+  }
   async function save() {
-    if (!buffer || !valid || saving) return;
+    if (locked) return;
+    if (issues.length) { setError(issues.join(" ")); return; }
+    if (!buffer) return;
     setSaving(true);
     setError("");
+    setNotice("");
     try {
       const wav = await referenceWav(buffer, start, end);
       const r = await fetch("/api/clones", {
@@ -175,6 +214,8 @@ export default function VoiceCloning() {
         throw new Error(data.error?.message ?? "Voice could not be saved.");
       await refresh();
       setSelected(data.id);
+      setNotice(`“${name.trim()}” সেভ হয়েছে। এবার Your script-এ নতুন কথা লিখে Generate cloned voice + SRT চাপুন।`);
+      scriptRef.current?.focus();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed.");
     } finally {
@@ -192,6 +233,7 @@ export default function VoiceCloning() {
     }
   }
   async function generate() {
+    if (locked) return;
     setBusy(true);
     setError("");
     const requestedProfile = selected,
@@ -242,9 +284,10 @@ export default function VoiceCloning() {
           {error}
         </div>
       )}
+      {notice && <div role="status" className="success clone-notice">{notice}</div>}
       <section className="panel clone-panel">
         <h2>
-          <Upload size={20} /> Add your voice
+          <Upload size={20} /> 1. Add your voice
         </h2>
         <p>
           Upload a clear MP3 or WAV of your own voice. Choose 3–10 seconds with
@@ -256,7 +299,7 @@ export default function VoiceCloning() {
             aria-label="Reference recording"
             type="file"
             accept="audio/mpeg,audio/wav,audio/x-wav,.mp3,.wav"
-            disabled={saving || busy}
+            disabled={locked}
             onChange={(e) => void load(e.target.files?.[0])}
           />
         </label>
@@ -273,11 +316,14 @@ export default function VoiceCloning() {
                   min="0"
                   max={buffer.duration}
                   step="0.1"
+                  disabled={locked}
                   value={start}
                   onChange={(e) => {
                     setStart(Number(e.target.value));
                     setPreview("");
                     setTranscript("");
+                    setNotice("");
+                    setError("");
                   }}
                 />
               </label>
@@ -288,11 +334,14 @@ export default function VoiceCloning() {
                   min="3"
                   max={buffer.duration}
                   step="0.1"
+                  disabled={locked}
                   value={end}
                   onChange={(e) => {
                     setEnd(Number(e.target.value));
                     setPreview("");
                     setTranscript("");
+                    setNotice("");
+                    setError("");
                   }}
                 />
               </label>
@@ -312,14 +361,33 @@ export default function VoiceCloning() {
           Voice name
           <input
             maxLength={60}
+            disabled={locked}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </label>
+        <p>
+          নির্বাচিত ৩–১০ সেকেন্ডে যা বলেছেন, সেটাই নিচে লাগবে—নতুন স্ক্রিপ্ট নয়।
+          Auto transcribe দিয়ে লিখিয়ে নিয়ে শুনে মিলিয়ে নিন, অথবা নিজে লিখুন।
+        </p>
+        <label>
+          Recording language
+          <select value={referenceLanguage} disabled={locked} onChange={(e) => setReferenceLanguage(e.target.value as "bn" | "en")}>
+            <option value="bn">বাংলা · Bengali</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <button disabled={!valid || locked} onClick={() => void transcribe()}>
+          {transcribing && <LoaderCircle className="spin" size={16} />}{" "}
+          {transcribing ? "অডিও থেকে লিখছি… / Transcribing locally…" : "Auto transcribe selected audio"}
+        </button>
+        <p>Free local Whisper · Audio stays on this computer. CPU transcription may take a minute. বাংলা শনাক্তকরণে ভুল হতে পারে—শুনে লেখা ঠিক করে নিন। You can always type the exact words yourself.</p>
         <label>
           Exact words in the selected part
           <textarea
             rows={3}
+            disabled={locked}
+            aria-describedby="clone-save-help"
             maxLength={1000}
             placeholder="Write exactly what you say in those selected seconds, in the original language."
             value={transcript}
@@ -329,21 +397,18 @@ export default function VoiceCloning() {
         <label className="clone-consent">
           <input
             type="checkbox"
+            disabled={locked}
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
           />{" "}
           This is my voice, or I have the speaker’s permission.
         </label>
+        <div id="clone-save-help" aria-live="polite">
+          {issues.length > 0 ? <><p>সেভ করার আগে / Before saving:</p><ul>{issues.map((issue) => <li key={issue}>{issue}</li>)}</ul></> : <p>Ready to save. নির্বাচিত অংশের সঙ্গে লেখা মিলে গেলে Save voice চাপুন।</p>}
+        </div>
         <button
           className="primary"
-          disabled={
-            !valid ||
-            !name.trim() ||
-            transcript.trim().length < 2 ||
-            !consent ||
-            saving ||
-            busy
-          }
+          disabled={locked}
           onClick={() => void save()}
         >
           {saving ? (
@@ -351,7 +416,7 @@ export default function VoiceCloning() {
           ) : (
             <Mic2 size={16} />
           )}{" "}
-          Save voice for cloning
+          {saving ? "Saving voice…" : "Save voice for cloning"}
         </button>
         <p>
           Saved privately on this computer. Reference audio and transcripts are
@@ -360,7 +425,7 @@ export default function VoiceCloning() {
       </section>
       <section className="panel clone-panel">
         <h2>
-          <Mic2 size={20} /> Speak in your voice
+          <Mic2 size={20} /> 2. Speak in your voice
         </h2>
         <p>
           Bengali and English · Local OmniVoice · Free for noncommercial use. No
@@ -377,7 +442,7 @@ export default function VoiceCloning() {
           Saved voice
           <select
             value={selected}
-            disabled={busy}
+            disabled={locked}
             onChange={(e) => setSelected(e.target.value)}
           >
             <option value="">Select your saved voice</option>
@@ -425,6 +490,7 @@ export default function VoiceCloning() {
         <label>
           Your script
           <textarea
+            ref={scriptRef}
             rows={7}
             maxLength={600}
             placeholder="Write the Bengali or English words you want your cloned voice to say…"
@@ -458,7 +524,7 @@ export default function VoiceCloning() {
         </p>
         <button
           className="primary"
-          disabled={busy || !installed || !selected || text.trim().length < 2}
+          disabled={locked || !installed || !selected || text.trim().length < 2}
           onClick={() => void generate()}
         >
           {busy && <LoaderCircle className="spin" size={16} />}{" "}

@@ -1,0 +1,4 @@
+faster-whisper==1.2.1
+ctranslate2==4.9.1
+av==16.1.0
+onnxruntime==1.32.0
