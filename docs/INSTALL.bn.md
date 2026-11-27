@@ -49,6 +49,8 @@ cd ByteminusVoiceStudio
 
 `-All` base + English expressive + Bengali Indic/FLAN-T5 tokenizer + OmniVoice cloning + Whisper reference transcription install করে এবং `doctor --all` চালায়। **OmniVoice weights noncommercial/community terms-এ**; [third-party notices](../THIRD_PARTY_NOTICES.md) আগে পড়ুন। Download code/model free হলেও সব model-এর commercial rights এক নয়।
 
+Token বানাতে Hugging Face-এর [Settings → Access Tokens](https://huggingface.co/settings/tokens) → **New token**, একটি নাম দিন, local model download-এর জন্য **Read** role নিন। Model access আগে approved থাকতে হবে। Production-এ model-scoped fine-grained read token ব্যবহার করুন। বিস্তারিত [official token guide](https://huggingface.co/docs/hub/security-tokens)। Token কেবল স্থানীয় login prompt-এ paste করুন; password লাগবে না।
+
 পরে আলাদা feature যোগ করা যায়:
 
 ```powershell
