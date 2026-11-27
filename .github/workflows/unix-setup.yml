@@ -2,12 +2,15 @@ name: Unix package setup
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: unix-setup-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   packages:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-14]
+        os: [ubuntu-22.04, macos-15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     steps:

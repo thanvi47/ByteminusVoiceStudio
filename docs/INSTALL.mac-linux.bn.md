@@ -4,7 +4,7 @@ Windows guide: [INSTALL.bn.md](INSTALL.bn.md)। এখানে Terminal/Bash �
 
 ## Platform ও সীমা
 
-- **macOS Apple Silicon (M1/M2/M3/M4 ও পরবর্তী arm64)**: native arm64 Terminal/Node ব্যবহার করুন; Rosetta x86_64 session নয়। বর্তমান adapter **CPU** ব্যবহার করে; Apple Metal/MPS acceleration enabled নয়। macOS 14+ এখানে CI target; package availability OS version অনুযায়ী বদলাতে পারে।
+- **macOS Apple Silicon (M1/M2/M3/M4 ও পরবর্তী arm64)**: native arm64 Terminal/Node ব্যবহার করুন; Rosetta x86_64 session নয়। বর্তমান adapter **CPU** ব্যবহার করে; Apple Metal/MPS acceleration enabled নয়। macOS 15 এখানে CI target; অন্য OS version-এর package availability আলাদা হতে পারে।
 - **Intel Mac**: pinned PyTorch 2.8 neural stack-এর official macOS x86_64 wheel নেই। Installer শুরুতেই থামে। পুরোনো Torch বসিয়ে dependency ভেঙে ফেলবেন না। [Upstream deprecation](https://dev-discuss.pytorch.org/t/pytorch-macos-x86-builds-deprecation-starting-january-2024/1690)।
 - **Ubuntu 22.04/24.04 x86_64 / glibc Linux**: CPU এবং compatible NVIDIA driver থাকলে CUDA। Linux aarch64 path আছে, কিন্তু x86_64-এর সমান verification দাবি করা হচ্ছে না। Alpine/musl supported নয়।
 - Node.js **22+** দরকার; 22 পরীক্ষিত version। Model/package download-এর জন্য কয়েক দশ GB free disk এবং expressive model-এর জন্য 16 GB RAM ব্যবহারিক starting point। Model weights ও Python environments GitHub source ZIP-এ থাকে না।
