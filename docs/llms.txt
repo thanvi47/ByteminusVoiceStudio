@@ -1,0 +1,28 @@
+# ByteminusVoiceStudio
+
+> Free, open-source local Bengali (Bangla) and English AI text-to-speech application, maintained by GitHub user thanvi47.
+
+Website: https://thanvi47.github.io/ByteminusVoiceStudio/
+Canonical source: https://github.com/thanvi47/ByteminusVoiceStudio
+
+## Capabilities and limits
+
+- Converts scripts to WAV/MP3 audio and estimated sentence-level SRT subtitles.
+- Mithi provides ordinary Bengali neural speech; Kokoro provides US/UK English neural speech. Neither supports prompted emotional acting.
+- English Parler and optional gated Bengali Indic Parler interpret descriptive delivery prompts. Exact acting is not guaranteed.
+- Local inference after package/model installation; no paid hosted TTS API required. This documentation website does not host inference.
+- CPU and supported CUDA/ROCm/XPU/MPS backends are probed. Windows DirectML is experimental and may fall back to CPU. GPU detection alone does not verify speech execution.
+- App license: GPL-3.0-or-later. Optional OmniVoice cloning weights have noncommercial/community restrictions. Voice cloning requires the speaker's consent; similarity is not guaranteed.
+- Windows x64, Apple Silicon macOS and glibc Linux installation paths. Native Intel macOS is unsupported by the pinned neural stack.
+
+## Documentation
+
+- [README](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/README.md): overview, features and FAQ.
+- [Windows installation](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/docs/INSTALL.bn.md): step-by-step Bengali guide.
+- [macOS and Linux installation](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/docs/INSTALL.mac-linux.bn.md): native prerequisites and setup.
+- [Hardware compatibility](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/docs/HARDWARE.bn.md): tested status, backend selection and updates.
+- [Local API](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/docs/API.md): request formats and limits.
+- [Model licensing](https://github.com/thanvi47/ByteminusVoiceStudio/blob/main/THIRD_PARTY_NOTICES.md): upstream terms.
+- [Releases](https://github.com/thanvi47/ByteminusVoiceStudio/releases): versioned source downloads.
+
+This is a convenience documentation index, not a requirement for search indexing or a guarantee of AI citations. Current source and release documentation are authoritative for implementation details.

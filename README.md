@@ -1,6 +1,10 @@
 # ByteminusVoiceStudio — Bengali & English AI Text to Speech
 
-> Hardware update: automatic CPU/CUDA/ROCm/XPU/MPS selection and experimental Windows DirectML. GPU tensor detection does not verify speech. **[Compatibility, tested limits and update commands](docs/HARDWARE.bn.md)**.
+**ByteminusVoiceStudio is a free, open-source Bengali (Bangla) and English AI text-to-speech application that runs on your own computer.** Turn a script into a WAV or MP3 voiceover and estimated SRT subtitles. It combines Mithi Bengali TTS, Kokoro English TTS, Parler expressive speech and optional consent-based voice cloning in a browser interface. No paid speech API is required.
+
+বাংলা লেখা থেকে কণ্ঠ ও ইংরেজি voiceover তৈরি করুন নিজের কম্পিউটারে। Windows, Apple Silicon macOS এবং Ubuntu/Linux-এর installation guide আছে। প্রথম setup-এ packages ও model download লাগে; installed local models দিয়ে inference-এ hosted API লাগে না।
+
+**[Project website and FAQ](https://thanvi47.github.io/ByteminusVoiceStudio/)** · [Download](https://github.com/thanvi47/ByteminusVoiceStudio/releases) · [Install on Windows](docs/INSTALL.bn.md) · [Install on macOS / Ubuntu](docs/INSTALL.mac-linux.bn.md) · [Hardware compatibility](docs/HARDWARE.bn.md)
 
 [![CI](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml/badge.svg)](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
@@ -15,9 +19,7 @@
 
 ![ByteminusVoiceStudio — local Bengali and English AI voice studio](public/social-card.png)
 
-Free, open source **local neural text-to-speech** for Bangla/Bengali and English. Next.js, TypeScript and Python inference with automatic CPU/NVIDIA CUDA selection. Generate WAV/MP3 voiceovers and estimated SRT subtitles; optional expressive models and private voice cloning. No paid speech APIs, subscriptions or cloud credits.
-
-বাংলা ও ইংরেজি neural voice তৈরি করুন নিজের কম্পিউটারে।
+Built with Next.js, TypeScript and Python. CPU and supported GPU backends are selected through runtime probes; compatibility and performance depend on the model, drivers and available memory. Windows DirectML is experimental. See the hardware guide before choosing an accelerator.
 
 **[Download a versioned source ZIP](https://github.com/thanvi47/ByteminusVoiceStudio/releases)** · [Repository clone/view statistics (owner access)](https://github.com/thanvi47/ByteminusVoiceStudio/graphs/traffic)
 
@@ -34,6 +36,28 @@ The live badges show GitHub stars, forks, package version, CI and release-asset 
 | eSpeak NG | 6 legacy configurations | Bengali/English | Robotic engine, only by explicit selection |
 
 These are model speaker profiles, not 72 verified voice artists. Bengali regional accent is unverified. Parler directions are qualitative; exact emotion/intensity is not guaranteed. Failed neural requests **never silently fall back to eSpeak**.
+
+## Frequently asked questions
+
+### Can I convert Bengali text to speech for free?
+
+Yes. Install ByteminusVoiceStudio and use a Mithi Bengali voice to turn Bangla text into local neural speech. You supply the computer, storage and electricity; no paid TTS API is required. See [Windows setup](docs/INSTALL.bn.md) or [macOS/Linux setup](docs/INSTALL.mac-linux.bn.md).
+
+### Does it support English voiceovers and emotional speech?
+
+Kokoro provides English neural voices. Parler interprets descriptive delivery prompts such as excited, calm or scared; optional Indic Parler provides Bengali expressive speech after its model access setup. Mithi and Kokoro do not perform prompted emotional acting. Exact delivery varies by model and script.
+
+### Can I download both voice audio and SRT subtitles?
+
+Yes. Paste your script and choose **Generate voice + SRT**, then download WAV/MP3 audio and SRT. Subtitle timing is estimated at sentence level, not exact word alignment.
+
+### Does it run offline, and is there a free hosted demo?
+
+Packages and model weights need internet during setup. Installed local models run without a paid hosted inference API. The public website provides documentation and fixed samples; it does not host GPU inference. The studio runs at `http://127.0.0.1:3000` on your computer.
+
+### Is voice cloning open source and free for commercial use?
+
+The application is GPL-3.0-or-later and its main speech engines have upstream Apache-2.0 releases. Optional OmniVoice cloning weights have noncommercial/community restrictions. Only clone your own voice or a speaker who has consented, and check [third-party licenses](THIRD_PARTY_NOTICES.md) before commercial use.
 
 ## Windows setup
 
