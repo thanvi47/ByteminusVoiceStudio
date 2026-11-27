@@ -33,17 +33,14 @@ Initial setup needs internet. Synthesis uses local weights and Hugging Face offl
 
 ## Linux / macOS
 
-Python startup paths support these platforms, but the checked-in lockfiles reflect the tested Windows environment. Install Python 3.12 and uv, create .venv, install the platform-supported CPU PyTorch 2.8.0 wheel, then the base lockfile. Omit Windows-only win32-setctime if required. Use the platform's official PyTorch installation instructions on macOS.
+See the complete [macOS / Linux / Ubuntu guide](INSTALL.mac-linux.bn.md) for native prerequisites, optional features and troubleshooting. Apple Silicon macOS uses CPU; Intel macOS is unsupported by the pinned PyTorch 2.8 wheel. Linux targets glibc systems such as Ubuntu 22.04/24.04. The shared lock marks win32-setctime as Windows-only.
 
 ```sh
-uv venv .venv --python 3.12
-uv pip install --python .venv/bin/python torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
-uv pip install --python .venv/bin/python -r neural/requirements.lock.txt
-.venv/bin/python scripts/download-models.py mithi kokoro
+bash scripts/setup.sh
 npm run dev
 ```
 
-For expressive mode create .runtime/parler-env, install matching CPU torch/torchaudio 2.8.0 plus neural/parler.lock.txt there, then run scripts/download-models.py parler. Linux/macOS setup has not been executed here.
+English expressive mode is included. Use `bash scripts/setup.sh --all` for all optional features after approving HF Indic access. Unix CI installs/packages/imports without model weights; that check is separate from real model-generation verification. Windows CPU generation is tested; Linux/macOS generation and GPU performance are not claimed from a package-only check.
 
 ## Troubleshooting
 

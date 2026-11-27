@@ -111,8 +111,8 @@ export default function Studio() {
   const [engineFilter, setEngineFilter] = useState("all");
   const [engines, setEngines] = useState<Record<string, boolean>>({});
   const [playgroundEngine, setPlaygroundEngine] = useState("parler");
-  const [hardware, setHardware] = useState<{ device: string; name: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string } | null>(null);
-  const [engineHardware, setEngineHardware] = useState<Record<string, { device: string; name: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string }>>({});
+  const [hardware, setHardware] = useState<{ device: string; name: string; platform?: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string } | null>(null);
+  const [engineHardware, setEngineHardware] = useState<Record<string, { device: string; name: string; platform?: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string }>>({});
   const [elapsed, setElapsed] = useState(0);
   const [previewSamples, setPreviewSamples] = useState<PreviewSamples>({});
   const [playingSample, setPlayingSample] = useState<string | null>(null);
@@ -777,6 +777,7 @@ export default function Studio() {
           <div hidden={section !== "Voice playground"}>
             <VoicePlayground
               engines={engines}
+              setupPlatform={activeHardware?.platform}
               onRuntimeChange={setPlaygroundEngine}
               scriptLimit={activeHardware?.maxScriptCharacters ?? 3000}
               runtimeLimits={Object.fromEntries(Object.entries(engineHardware).map(([key, value]) => [key, value.maxScriptCharacters ?? 3000]))}
@@ -1228,7 +1229,7 @@ export default function Studio() {
                       <p className="capability-note error">
                         {choice.engine === "indic" ? <>
                           Bengali expressive requires a separate Indic model download. Base setup does not install it. Accept access on{" "}
-                          <a href="https://huggingface.co/ai4bharat/indic-parler-tts" target="_blank" rel="noreferrer">Hugging Face</a>, log in using <code>.venv/Scripts/hf.exe auth login</code>, then run <code>./scripts/setup-bengali-expressive.ps1</code>. Restart the studio after setup. For ordinary Bengali speech, select Bengali · Mithi.
+                          <a href="https://huggingface.co/ai4bharat/indic-parler-tts" target="_blank" rel="noreferrer">Hugging Face</a>, log in using <code>{activeHardware?.platform && activeHardware.platform !== "win32" ? ".venv/bin/hf auth login" : ".venv/Scripts/hf.exe auth login"}</code>, then run <code>{activeHardware?.platform && activeHardware.platform !== "win32" ? "bash scripts/setup.sh --bengali-expressive" : "./scripts/setup-bengali-expressive.ps1"}</code>. Restart the studio after setup. For ordinary Bengali speech, select Bengali · Mithi.
                         </> : <>{choice.engine} is unavailable. Run <code>npm run dev:studio</code> after neural setup.</>}
                       </p>
                     )}

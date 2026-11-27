@@ -62,6 +62,7 @@ export default function VoicePlayground({
   engines,
   scriptLimit = 3000,
   runtimeLimits,
+  setupPlatform,
   onRuntimeChange,
   onOpenStudio,
   active,
@@ -69,6 +70,7 @@ export default function VoicePlayground({
   engines: Record<string, boolean>;
   scriptLimit?: number;
   runtimeLimits?: Record<string, number>;
+  setupPlatform?: string;
   onRuntimeChange?: (engine: string) => void;
   onOpenStudio: (input: SynthesisInput) => void;
   active: boolean;
@@ -507,7 +509,7 @@ export default function VoicePlayground({
             <p className="director-warning">
               This engine is unavailable.{" "}
               {group === "indic"
-                ? "Base setup does not install Indic. Accept free access at huggingface.co/ai4bharat/indic-parler-tts, log in with .venv/Scripts/hf.exe auth login, then run ./scripts/setup-bengali-expressive.ps1 and restart. Ordinary Bengali voices use Mithi."
+                ? `Base setup does not install Indic. Accept free access at huggingface.co/ai4bharat/indic-parler-tts, log in with ${setupPlatform && setupPlatform !== "win32" ? ".venv/bin/hf auth login, then bash scripts/setup.sh --bengali-expressive" : ".venv/Scripts/hf.exe auth login, then ./scripts/setup-bengali-expressive.ps1"} and restart. Ordinary Bengali voices use Mithi.`
                 : "Start the local neural service after setup."}
             </p>
           )}

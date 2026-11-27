@@ -1,5 +1,6 @@
 """Select a usable accelerator, not just a GPU name or installed driver."""
 import os
+import sys
 from neural.cpu_runtime import configure_cpu
 
 
@@ -26,7 +27,7 @@ def runtime_profile(torch):
         reason = "CUDA is unavailable in this Python environment. NVIDIA GPUs need a compatible CUDA PyTorch build and driver."
     if requested == "cuda" and device != "cuda":
         raise RuntimeError(reason or "CUDA was requested but is unavailable")
-    return dict(device=device, name=name, vramGB=vram, cpuThreads=threads,
+    return dict(device=device, name=name, platform=sys.platform, vramGB=vram, cpuThreads=threads,
                 logicalProcessors=os.cpu_count() or 1, reason=reason,
                 batchCharacters=1200 if device == "cuda" and vram >= 16 else 600 if device == "cuda" else 160 if threads <= 2 else 240 if threads <= 4 else 300,
                 requestTimeoutSeconds=1200, maxScriptCharacters=12000 if device == "cuda" and vram >= 16 else 6000 if device == "cuda" else 3000,

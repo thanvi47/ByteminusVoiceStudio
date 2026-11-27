@@ -179,7 +179,8 @@ def render(data):
     speaker = data.voice.split(":", 1)[1]
     if not installed().get(engine):
         if engine == "indic":
-            raise HTTPException(503, "Bengali expressive (Indic) model/runtime is missing or unavailable. Base setup does not install Indic. Accept model access at huggingface.co/ai4bharat/indic-parler-tts, log in with .venv/Scripts/hf.exe auth login, then run ./scripts/setup-bengali-expressive.ps1 and restart the studio.")
+            setup = ".venv/Scripts/hf.exe auth login, then ./scripts/setup-bengali-expressive.ps1" if os.name == "nt" else ".venv/bin/hf auth login, then bash scripts/setup.sh --bengali-expressive"
+            raise HTTPException(503, f"Bengali expressive (Indic) model/runtime is missing or unavailable. Base setup does not install Indic. Accept model access at huggingface.co/ai4bharat/indic-parler-tts, run {setup}, then restart the studio.")
         raise HTTPException(
             503, f"{engine} is not installed. Run the neural setup script."
         )

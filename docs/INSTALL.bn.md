@@ -1,6 +1,6 @@
 # ByteminusVoiceStudio — নতুন PC-তে ধাপে ধাপে setup
 
-Free local বাংলা/English AI text-to-speech, expressive voice, WAV/MP3 ও estimated SRT। কোনো paid speech API লাগে না। এই guide **Windows 10/11 64-bit, PowerShell**-এর জন্য। Linux/macOS-এর experimental নির্দেশনা [NEURAL.md](NEURAL.md)-তে।
+Free local বাংলা/English AI text-to-speech, expressive voice, WAV/MP3 ও estimated SRT। কোনো paid speech API লাগে না। এই guide **Windows 10/11 64-bit, PowerShell**-এর জন্য। [macOS/Linux/Ubuntu guide এখানে](INSTALL.mac-linux.bn.md)।
 
 ## ১. প্রয়োজনীয় software ও hardware
 
@@ -9,6 +9,7 @@ Free local বাংলা/English AI text-to-speech, expressive voice, WAV/MP3 
 - Internet এবং বড় model/package download-এর জন্য যথেষ্ট disk space। সব optional feature-এর জন্য কয়েক দশ GB খালি রাখা ব্যবহারিকভাবে ভালো; মাপ feature অনুযায়ী বদলায়।
 - বড় expressive model-এর জন্য 16 GB RAM ভালো starting point; কম RAM-এ ধীর হতে পারে। এখানে Ryzen 7/16 GB CPU-তে পরীক্ষা হয়েছে।
 - NVIDIA GPU থাকলে উপযুক্ত official NVIDIA driver আগে লাগবে। GPU ছাড়াও CPU-তে চলে। Setup Python, uv ও app-এর Python packages project-এর ভেতর install করে; global Python/pip লাগবে না।
+- AMD Radeon GPU থাকলেই CUDA ব্যবহার করা যায় না। এই সংস্করণে AMD DirectML/ROCm acceleration নেই; RX 570-এর মতো AMD PC CPU-তে চলবে। `-Device cuda` কেবল compatible NVIDIA setup-এর জন্য।
 
 ```powershell
 node --version

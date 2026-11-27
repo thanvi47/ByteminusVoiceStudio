@@ -9,6 +9,8 @@
 
 **[বাংলায় সম্পূর্ণ installation guide](docs/INSTALL.bn.md)** · [Hardware and models](docs/NEURAL.md) · [Contributing](CONTRIBUTING.md) · [SEO/deployment](docs/SEO.md)
 
+**Setup by OS:** [Windows](docs/INSTALL.bn.md) · **[macOS / Linux / Ubuntu](docs/INSTALL.mac-linux.bn.md)**
+
 ![ByteminusVoiceStudio — local Bengali and English AI voice studio](public/social-card.png)
 
 Free, open source **local neural text-to-speech** for Bangla/Bengali and English. Next.js, TypeScript and Python inference with automatic CPU/NVIDIA CUDA selection. Generate WAV/MP3 voiceovers and estimated SRT subtitles; optional expressive models and private voice cloning. No paid speech APIs, subscriptions or cloud credits.
@@ -58,6 +60,19 @@ Open http://127.0.0.1:3000. Keep the terminal running. Setup installs isolated P
 After setup, `npm run dev` starts/reuses both services. Hardware is selected independently in the main and expressive environments. The editor supports 3,000 characters on CPU, 6,000 on usable CUDA GPUs below 16 GB VRAM, and 12,000 on larger CUDA GPUs. Long neural scripts render sequentially in hardware-sized batches and join into one recording and estimated SRT. First generation loads the chosen model; CPU Parler can take many minutes per section. See [NEURAL.md](docs/NEURAL.md).
 
 Expressive CPU requests can exceed five minutes for a paragraph. The local audio connection uses an explicit deadline instead of fetch's independent header timeout; the worker allows up to 20 minutes. A timeout or dropped connection is reported separately from an offline server. Do not submit the same script again while generation is pending. The audio preview sits directly under Generate in the script column.
+
+## macOS / Linux / Ubuntu setup
+
+After installing Node.js 22+, Git and the native audio/build dependencies from the [Unix guide](docs/INSTALL.mac-linux.bn.md):
+
+```bash
+git clone https://github.com/thanvi47/ByteminusVoiceStudio.git
+cd ByteminusVoiceStudio
+bash scripts/setup.sh
+npm run dev
+```
+
+Use `bash scripts/setup.sh --all` for all optional models after approving Indic access in your own HF account. macOS requires Apple Silicon for the pinned neural stack and currently uses CPU, not MPS. Linux supports CPU/compatible NVIDIA CUDA. Intel macOS is not supported by the pinned modern PyTorch wheel. The Unix package workflow checks installation/imports without downloading models; it does not claim full neural-generation verification on those OSes.
 
 ## Features
 

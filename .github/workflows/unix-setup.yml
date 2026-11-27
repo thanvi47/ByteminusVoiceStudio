@@ -1,0 +1,31 @@
+name: Unix package setup
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  packages:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check shell syntax and help
+        run: |
+          bash -n scripts/setup.sh
+          bash scripts/setup.sh --help
+      - name: Install native build/audio dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libsndfile1 espeak-ng ffmpeg
+      - name: Install native audio dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libsndfile espeak-ng ffmpeg pkg-config
+      - name: Install all Python packages and check imports (no model downloads)
+        run: bash scripts/setup.sh --all --skip-models --skip-web --device cpu

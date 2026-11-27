@@ -29,20 +29,24 @@ MODULES = {
 FIXES = {'base': './scripts/setup-neural.ps1', 'expressive': './scripts/setup-neural.ps1 -Expressive',
          'indic': './scripts/setup-bengali-expressive.ps1 (approve HF access and log in first)',
          'cloning': './scripts/setup-cloning.ps1', 'transcription': './scripts/setup-transcription.ps1'}
+if sys.platform != 'win32':
+    FIXES = {'base': 'bash scripts/setup.sh', 'expressive': 'bash scripts/setup.sh',
+             'indic': 'bash scripts/setup.sh --bengali-expressive (approve HF access first)',
+             'cloning': 'bash scripts/setup.sh --cloning', 'transcription': 'bash scripts/setup.sh --transcription'}
 
 
-def probe(profile):
+def probe(profile, packages_only=False):
     errors = []
     for module in MODULES[profile]:
         try:
             importlib.import_module(module)
         except Exception as exc:
             errors.append(f'{module}: {type(exc).__name__}: {str(exc)[:180]}')
-    for relative in FILES[profile]:
+    for relative in ([] if packages_only else FILES[profile]):
         target = ROOT / relative
         if not target.is_file() or not target.stat().st_size:
             errors.append(f'Missing or empty file: {relative}')
-    if profile == 'base':
+    if profile == 'base' and not packages_only:
         catalog = json.loads((ROOT / 'lib/voice-catalog.json').read_text(encoding='utf-8'))
         for voice in catalog:
             if voice['engine'] == 'kokoro':
@@ -63,25 +67,28 @@ def probe(profile):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--all', action='store_true')
+    parser.add_argument('--packages-only', action='store_true', help='Check imports/hardware only, without model files')
     parser.add_argument('--probe', choices=FILES)
     args = parser.parse_args()
     if args.probe:
         # Keep library diagnostics separate from machine-readable output.
         import contextlib
         with contextlib.redirect_stdout(sys.stderr):
-            result = probe(args.probe)
+            result = probe(args.probe, args.packages_only)
         print(json.dumps(result))
         sys.exit(0 if not result['errors'] else 1)
     failures = 0
     for profile in FILES:
         required = profile == 'base' or args.all
-        if not required and not (ROOT / FILES[profile][0]).exists():
+        if not required and not (args.packages_only and profile == 'expressive') and not (ROOT / FILES[profile][0]).exists():
             print(f'OPTIONAL {profile}: not installed. Install: {FIXES[profile]}', flush=True)
             continue
         python = ROOT / ('.runtime/parler-env' if profile in {'expressive', 'indic'} else '.venv') / ('Scripts/python.exe' if sys.platform == 'win32' else 'bin/python')
         print(f'Checking {profile}...', flush=True)
         try:
-            result = subprocess.run([str(python), str(Path(__file__)), '--probe', profile], cwd=ROOT,
+            command = [str(python), str(Path(__file__)), '--probe', profile]
+            if args.packages_only: command.append('--packages-only')
+            result = subprocess.run(command, cwd=ROOT,
                                     capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
             report = json.loads(result.stdout)
             if report['errors']:
