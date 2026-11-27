@@ -52,6 +52,21 @@ def description(data):
         "slightly" if intensity < 35 else "moderately" if intensity < 75 else "very"
     )
     emotion = data["emotion"] if intensity > 0 else "Neutral"
+    if data["voice"].startswith("parler:") and emotion in {"Excited", "Scared"}:
+        # These performances need their own prosody, not the old contradictory
+        # "natural speaking rate and natural pitch" instruction. Never add DSP here.
+        performance = (
+            f"{emphasis} excited and happy, speaking quickly with animated intonation, "
+            "a wide pitch range and emphatic words"
+            if emotion == "Excited" else
+            f"{emphasis} frightened and worried, speaking quietly and hesitantly "
+            "with a breathy voice, tense emphasis and short pauses"
+        )
+        return (
+            f"{speaker}'s voice is {performance}. "
+            "The recording is very clear, close and high quality, with no reverberation or background noise. "
+            f"{data.get('style', '')}"
+        ).strip()
     styles = {
         "Neutral": "natural, conversational and clear",
         "Happy": "cheerful and happy",

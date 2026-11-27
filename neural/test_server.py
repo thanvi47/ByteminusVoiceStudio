@@ -4,6 +4,22 @@ from neural.server import app, script_parts
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_targeted_english_emotions_have_distinct_unprocessed_directions(self):
+        from neural.parler_worker import description, apply_controls
+        import numpy as np
+        base = {"voice": "parler:Jon", "intensity": 70, "style": ""}
+        excited = description({**base, "emotion": "Excited"})
+        scared = description({**base, "emotion": "Scared"})
+        self.assertIn("speaking quickly", excited)
+        self.assertIn("wide pitch range", excited)
+        self.assertIn("frightened", scared)
+        self.assertIn("hesitantly", scared)
+        for prompt in [excited, scared]:
+            self.assertNotIn("natural speaking rate", prompt)
+            self.assertIn("no reverberation", prompt)
+        audio = np.arange(20, dtype=np.float32)
+        self.assertIs(apply_controls(audio, 1, 1), audio)
+
     def test_numeric_expressive_speed_and_pitch_change_the_signal(self):
         import numpy as np
         from neural.parler_worker import apply_controls

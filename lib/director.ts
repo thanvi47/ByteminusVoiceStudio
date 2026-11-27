@@ -95,6 +95,16 @@ export const vibes: Vibe[] = [
     "Excitement that builds towards important lines.",
   ),
   vibe(
+    "fear",
+    "Fear & suspense",
+    "Frightened, hushed and tense",
+    "Scared",
+    "Quiet and breathy, as if afraid of being overheard.",
+    "Frightened, worried and tense.",
+    "Hesitant phrases and short pauses; keep every word clear.",
+    "Fear and uncertainty, with restrained urgency.",
+  ),
+  vibe(
     "cinema",
     "Dramatic scene",
     "Tension, contrast and anticipation",
@@ -165,7 +175,19 @@ export const vibes: Vibe[] = [
     "Curiosity and understated awe.",
   ),
 ];
-export const demoScripts = [
+export const demoScripts: { id: string; name: string; text: string; emotion?: "Excited" | "Scared" }[] = [
+  {
+    id: "excited",
+    name: "English · Excited demo",
+    emotion: "Excited",
+    text: "We did it! I can't believe it. This is the best news I've heard all year!",
+  },
+  {
+    id: "scared",
+    name: "English · Scared demo",
+    emotion: "Scared",
+    text: "Wait. Did you hear that? Someone is outside the door. Please, don't make a sound.",
+  },
   {
     id: "welcome",
     name: "Warm welcome",
@@ -187,6 +209,9 @@ export const demoScripts = [
     text: "Take a moment to settle in. [pause 500ms] We'll work through this one step at a time. You don't need to know everything before you begin.",
   },
 ];
+export function directionsForEmotion(emotion: string): Vibe | undefined {
+  return vibes.find((v) => v.emotion === emotion);
+}
 export function compileDirections(directions: Directions) {
   return directionFields
     .map((key) => `${key}: ${directions[key].trim()}`)

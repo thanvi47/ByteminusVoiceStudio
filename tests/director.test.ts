@@ -3,6 +3,8 @@ import {
   compileDirections,
   developerSnippet,
   directionFields,
+  directionsForEmotion,
+  demoScripts,
   recipeSchema,
   requestForRecipe,
   vibes,
@@ -19,6 +21,16 @@ const recipe = {
   directions: vibes[0].directions,
 };
 describe("voice playground recipes and requests", () => {
+  it("replaces conflicting natural directions for Excited and Scared", () => {
+    const excited = directionsForEmotion("Excited")!;
+    const scared = directionsForEmotion("Scared")!;
+    expect(excited.directions.Pacing).toContain("Brisk");
+    expect(scared.directions.Tone).toContain("Frightened");
+    expect(scared.directions.Pacing).toContain("Hesitant");
+    for (const emotion of ["Excited", "Scared"]) {
+      expect(demoScripts.some((demo) => demo.emotion === emotion)).toBe(true);
+    }
+  });
   it("roundtrips a recipe without losing its script or structured direction", () => {
     const parsed = recipeSchema.parse(JSON.parse(JSON.stringify(recipe)));
     const request = requestForRecipe(parsed);

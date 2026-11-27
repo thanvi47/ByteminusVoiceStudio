@@ -981,12 +981,19 @@ export default function Studio() {
                       aria-label="Emotion"
                       value={choice.neural && choice.styleMode !== "prompted" ? "Neutral" : emotion}
                       disabled={choice.neural && choice.styleMode !== "prompted"}
-                      onChange={(e) =>
-                        setEmotion(e.target.value as SynthesisInput["emotion"])
-                      }
+                      onChange={(e) => {
+                        const next = e.target.value as SynthesisInput["emotion"];
+                        setEmotion(next);
+                        if (choice.engine === "parler" && (next === "Excited" || next === "Scared")) {
+                          setStyle("");
+                          setRate(1);
+                          setPitch(1);
+                          setIntensity(70);
+                        }
+                      }}
                     >
                       {emotions.map((e) => (
-                        <option key={e}>{e}</option>
+                        <option key={e} value={e}>{e === "Scared" ? "Scared / Scary" : e}</option>
                       ))}
                     </select>
                     {choice.styleMode === "prompted" && (

@@ -25,6 +25,7 @@ import {
   demoScripts,
   developerSnippet,
   directionFields,
+  directionsForEmotion,
   recipeSchema,
   requestForRecipe,
   vibes,
@@ -42,7 +43,7 @@ type Take = {
   subtitles: string;
 };
 const initialInput = inputSchema.parse({
-  text: demoScripts[0].text,
+  text: demoScripts.find((demo) => demo.id === "welcome")!.text,
   voice: "parler:Lea",
   emotion: "Neutral",
 });
@@ -203,6 +204,8 @@ export default function VoicePlayground({
     setVibeId(id);
     setDirections({ ...v.directions });
     patch({ emotion: v.emotion });
+    if (v.emotion === "Excited" || v.emotion === "Scared")
+      patch({ rate: 1, pitch: 1, intensity: 70 });
   }
   function shuffled<T>(items: T[]) {
     return items
@@ -553,7 +556,16 @@ export default function VoicePlayground({
               defaultValue=""
               onChange={(e) => {
                 const demo = demoScripts.find((d) => d.id === e.target.value);
-                if (demo) patch({ text: demo.text });
+                if (demo) {
+                  patch({ text: demo.text });
+                  if (demo.emotion) {
+                    patch({ voice: "parler:Jon", emotion: demo.emotion, rate: 1, pitch: 1, intensity: 70 });
+                    setVoicePage(0);
+                    const v = directionsForEmotion(demo.emotion)!;
+                    setVibeId(v.id);
+                    setDirections({ ...v.directions });
+                  }
+                }
                 e.target.value = "";
               }}
             >
@@ -597,9 +609,17 @@ export default function VoicePlayground({
                 value={selected.styleMode === "prompted" ? input.emotion : "Neutral"}
                 disabled={selected.styleMode !== "prompted"}
                 onChange={(e) => {
+                  const emotion = e.target.value as SynthesisInput["emotion"];
                   patch({
-                    emotion: e.target.value as SynthesisInput["emotion"],
+                    emotion,
                   });
+                  if (emotion === "Excited" || emotion === "Scared") {
+                    const v = directionsForEmotion(emotion)!;
+                    setDirections({ ...v.directions });
+                    setVibeId(v.id);
+                    patch({ rate: 1, pitch: 1, intensity: 70 });
+                    return;
+                  }
                   setDirections((old) => ({
                     ...old,
                     Emotion: `${e.target.value}, conveyed naturally without exaggeration.`,
@@ -608,7 +628,7 @@ export default function VoicePlayground({
                 }}
               >
                 {emotions.map((e) => (
-                  <option key={e}>{e}</option>
+                  <option key={e} value={e}>{e === "Scared" ? "Scared / Scary" : e}</option>
                 ))}
               </select>
             </label>
