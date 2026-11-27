@@ -1,6 +1,13 @@
-# ByteminusVoiceStudio
+# ByteminusVoiceStudio — Bengali & English AI Text to Speech
 
-Free, open source **local neural text-to-speech** for Bangla and English. Next.js, TypeScript and a Python CPU inference service. No paid speech APIs, subscriptions or cloud credits.
+[![CI](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml/badge.svg)](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
+**[বাংলায় সম্পূর্ণ installation guide](docs/INSTALL.bn.md)** · [Hardware and models](docs/NEURAL.md) · [Contributing](CONTRIBUTING.md) · [SEO/deployment](docs/SEO.md)
+
+![ByteminusVoiceStudio — local Bengali and English AI voice studio](public/social-card.png)
+
+Free, open source **local neural text-to-speech** for Bangla/Bengali and English. Next.js, TypeScript and Python inference with automatic CPU/NVIDIA CUDA selection. Generate WAV/MP3 voiceovers and estimated SRT subtitles; optional expressive models and private voice cloning. No paid speech APIs, subscriptions or cloud credits.
 
 বাংলা ও ইংরেজি neural voice তৈরি করুন নিজের কম্পিউটারে।
 
@@ -11,19 +18,23 @@ Free, open source **local neural text-to-speech** for Bangla and English. Next.j
 | Mithi v2 Flash | 10 | Bengali | Natural neural speech; emotion effects disabled |
 | Kokoro v1 | 28 | US/UK English | Natural neural speech; emotion effects disabled |
 | Parler-TTS Mini v1 | 34 named speakers | English, speaker-dependent accent | Prompted delivery and optional voice direction; results vary |
+| Indic Parler (optional gated download) | Arjun/Aditi | Bengali expressive | Model-directed emotion; own approved Hugging Face access required |
 | eSpeak NG | 6 legacy configurations | Bengali/English | Robotic engine, only by explicit selection |
 
 These are model speaker profiles, not 72 verified voice artists. Bengali regional accent is unverified. Parler directions are qualitative; exact emotion/intensity is not guaranteed. Failed neural requests **never silently fall back to eSpeak**.
 
 ## Windows setup
 
-Install Node.js 22 and Git. In PowerShell inside this project:
+Install Node.js 22 and Git, open a new PowerShell, then:
 
 ```powershell
-npm ci --legacy-peer-deps
-./scripts/setup-neural.ps1 -Expressive
+git clone https://github.com/thanvi47/ByteminusVoiceStudio.git
+cd ByteminusVoiceStudio
+./scripts/setup.ps1
 npm run dev
 ```
+
+**All optional features:** approve [Indic model access](https://huggingface.co/ai4bharat/indic-parler-tts) in your own HF account first, then use `./scripts/setup.ps1 -All`. It installs locked web/Python dependencies, all engines and reference transcription, prompts for local HF login when needed, and runs `npm run doctor -- --all`. Optional cloning weights have noncommercial/community terms. For feature flags, GPU setup, updates and recovery, follow the [complete step-by-step guide](docs/INSTALL.bn.md). Compatible drivers, storage, internet and upstream model permission are still needed; zero errors on every PC cannot be guaranteed.
 
 **Bengali expressive voices (Arjun/Aditi) are a separate installation.** The commands above install ordinary Bengali Mithi voices and English expressive Parler, not the gated Indic model. On each new computer, sign into Hugging Face and accept the model's access conditions at [AI4Bharat Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts). Then, from the project folder:
 
@@ -87,9 +98,9 @@ Generic speaker previews are committed in `public/voice-previews/v1/` and play w
 
 ## Bengali expressive speech (optional, model access required)
 
-Mithi/Kokoro delivery effects only change speed/pitch; they cannot perform laughter, sadness or whispering. For Bengali model-directed emotion, this app includes an optional Indic Parler adapter with recommended Arjun/Aditi profiles. Create a free Hugging Face account and accept the upstream gate at [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts). Then sign in locally with `.venv/Scripts/hf.exe auth login` and run `./scripts/setup-bengali-expressive.ps1`. Never paste your token into chat or commit it. Restart the studio and select **Bengali · Expressive**. No paid API or subscription is needed.
+Mithi/Kokoro cannot perform emotional acting; automatic emotion effects are disabled. For Bengali model-directed emotion, this app includes an optional Indic Parler adapter with recommended Arjun/Aditi profiles. Create a free Hugging Face account and accept the upstream gate at [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts). Then sign in locally with `.venv/Scripts/hf.exe auth login` and run `./scripts/setup-bengali-expressive.ps1`. Never paste your token into chat or commit it. Restart the studio and select **Bengali · Expressive**. No paid API or subscription is needed.
 
-The model and its separate FLAN-T5 description tokenizer are pinned. The description tokenizer must match the model's 32,128-entry text encoder vocabulary; mT5 is incompatible. The adapter loads the complete Bengali tokenizer JSON directly and checks description vocabulary compatibility. It remains disabled without the required model/tokenizer files. Descriptive emotions are qualitative; exact acting is not guaranteed. English expressive Parler is already available with the existing setup. The optional Indic profiles have no committed saved samples yet.
+The model and its separate FLAN-T5 description tokenizer are pinned. The description tokenizer must match the model's 32,128-entry text encoder vocabulary; mT5 is incompatible. The adapter loads the complete Bengali tokenizer JSON directly and checks description vocabulary compatibility. It remains disabled without the required model/tokenizer files. Descriptive emotions are qualitative; exact acting is not guaranteed. English expressive Parler is already available with the existing setup. Arjun/Aditi have committed Excited/Scared samples made from fixed generic text; script generation still needs the installed model.
 
 ## Tests and contributions
 
@@ -105,7 +116,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/TESTING.md), [API](docs/
 ```text
 app/       Studio UI and authenticated API
 lib/       Validation, shared voice catalog, audio export and adapters
-neural/    CPU inference, isolated expressive worker and Python locks
+neural/    CPU/CUDA inference, isolated expressive worker and Python locks
 scripts/   Setup, pinned model download and service startup
 tests/     TypeScript tests and reusable browser specs
 docs/      Setup, capabilities and deployment

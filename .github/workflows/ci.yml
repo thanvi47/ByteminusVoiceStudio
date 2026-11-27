@@ -16,4 +16,10 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: python -m unittest neural.test_hardware
+      - shell: pwsh
+        run: |
+          $errors = $null
+          $tokens = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/setup.ps1'), [ref]$tokens, [ref]$errors)
+          if ($errors) { throw $errors }
       - run: python -m py_compile neural/server.py neural/parler_worker.py neural/clone_worker.py neural/transcribe_worker.py neural/build_previews.py scripts/download-models.py

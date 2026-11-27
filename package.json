@@ -14,8 +14,10 @@
     "neural:serve": "node scripts/serve-neural.mjs",
     "dev:web": "next dev --hostname 127.0.0.1",
     "start:studio": "node scripts/dev-studio.mjs --production",
-    "previews:build": "node scripts/build-voice-previews.mjs"
+    "previews:build": "node scripts/build-voice-previews.mjs",
+    "doctor": "node scripts/doctor.mjs"
   },
+  "engines": { "node": ">=22" },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",
     "@echogarden/espeak-ng-emscripten": "0.3.5",
