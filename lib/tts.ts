@@ -1,5 +1,6 @@
 import init from "@echogarden/espeak-ng-emscripten";
 import { Mp3Encoder } from "@breezystack/lamejs";
+import { masterPcm } from "./audio-levels.mjs";
 import {
   delivery,
   escapeXML,
@@ -119,6 +120,12 @@ async function neuralSynthesize(input: SynthesisInput) {
     throw new Error("AUDIO_LIMIT");
   const pcm = new Int16Array(buffer.length / 2);
   for (let i = 0; i < pcm.length; i++) pcm[i] = buffer.readInt16LE(i * 2);
+  pcm.set(
+    masterPcm(pcm, sampleRate, {
+      gain: input.outputGain,
+      normalize: input.normalizeAudio,
+    }),
+  );
   const peaks = Array.from({ length: 100 }, (_, i) => {
     let peak = 0;
     for (
@@ -222,6 +229,12 @@ export const provider: TTSProvider = {
         pcm.set(chunk, offset);
         offset += chunk.length;
       }
+      pcm.set(
+        masterPcm(pcm, 22050, {
+          gain: input.outputGain,
+          normalize: input.normalizeAudio,
+        }),
+      );
       const peaks = Array.from({ length: 100 }, (_, i) => {
         let peak = 0;
         const start = Math.floor((i * length) / 100),

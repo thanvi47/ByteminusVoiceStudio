@@ -1,5 +1,11 @@
 # Verification
 
+## Delivery and volume verification
+
+68 TypeScript tests cover normalization, manual gain/mute, peak limiting, preserved silence/duration, actual exported PCM volume, metadata suggestions and volume request bounds. Connected Chrome confirmed Jon → Excited and Emily → Calm in both studio and playground, and a generated Nicole recording played with a 300% playback boost without a browser error. The playback slider was then restored to 100%.
+
+Two real Nicole WAV requests used the same 6.45-second script: raw output measured RMS 0.05076; auto loudness plus 200% output gain measured RMS 0.17409 (about 3.43×) with peak limited to 0.95. A cached Nicole neutral preview measured about +4.75 dB after automatic correction. All 72 generic preview entries were re-encoded from their existing PCM sources; no private recordings were published. These are signal-level measurements, not a claim of perceived loudness on every device.
+
 ## Voice playground verification
 
 The playground update passes 61 TypeScript tests, including recipe validation, unknown/legacy voice rejection, instruction bounds and safe developer example serialization. Ten Python tests cover neural protocol controls, numeric pitch/speed and separate Indic tokenizers. Production build and typecheck pass.

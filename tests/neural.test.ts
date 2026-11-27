@@ -71,6 +71,36 @@ describe("neural interoperability", () => {
     expect(audio.readUInt32LE(24)).toBe(24000);
     expect(audio.readUInt32LE(28)).toBe(48000);
   });
+  it("applies output volume to the exported WAV and waveform rather than only the player", async () => {
+    const pcm = Int16Array.from({ length: 2400 }, (_, i) =>
+        Math.round(1000 * Math.sin(i * 0.1)),
+      ),
+      bytes = Buffer.from(pcm.buffer);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(bytes, { headers: { "X-Sample-Rate": "24000" } }),
+          ),
+        ),
+    );
+    const base = inputSchema.parse({
+      text: "Hello.",
+      voice: "kokoro:af_heart",
+      normalizeAudio: false,
+    });
+    const quiet = await provider.synthesize(base),
+      loud = await provider.synthesize({ ...base, outputGain: 2 });
+    expect(loud.duration).toBe(quiet.duration);
+    expect(Math.max(...loud.peaks)).toBeGreaterThan(
+      Math.max(...quiet.peaks) * 1.9,
+    );
+    expect(loud.audio.readInt16LE(44 + 20)).toBeGreaterThan(
+      quiet.audio.readInt16LE(44 + 20) * 1.9,
+    );
+  });
   it("validates custom voice direction length", () =>
     expect(
       inputSchema.safeParse({

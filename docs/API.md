@@ -21,6 +21,8 @@ Cloning accepts at most 600 script characters and 90 seconds output. Reference u
 
 Synthesis JSON:
 
+`outputGain` accepts 0–3 (default 1); `normalizeAudio` defaults to true. Both `/api/tts/generate` and `/api/clones/generate` apply these controls to PCM before encoding WAV/MP3. Level processing preserves sample count and SRT duration, excludes quiet gaps from its speech-level estimate, limits automatic gain to 8× and smoothly limits processed peaks to 95% full scale. It is RMS correction, not a LUFS guarantee. The browser's separate playback gain is not sent to the API. Voice catalog entries include `delivery.label`, `delivery.emotion` and a description of an editable app suggestion.
+
 ```json
 {"text":"Hello [pause 500ms] world.","voice":"kokoro:af_heart","emotion":"Neutral","intensity":50,"rate":1,"pitch":1,"format":"wav","style":""}
 ```

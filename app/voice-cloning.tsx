@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, LoaderCircle, Mic2, Trash2, Upload } from "lucide-react";
 import { srt } from "@/lib/script";
 import type { CloneProfile } from "@/lib/clone";
+import AudioPlayer from "./audio-player";
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -71,6 +72,8 @@ export default function VoiceCloning() {
     [saving, setSaving] = useState(false),
     [elapsed, setElapsed] = useState(0),
     [error, setError] = useState("");
+  const [outputGain, setOutputGain] = useState(1),
+    [normalizeAudio, setNormalizeAudio] = useState(true);
   const [preview, setPreview] = useState(""),
     [result, setResult] = useState<{
       url: string;
@@ -204,6 +207,8 @@ export default function VoiceCloning() {
           language,
           format: requestedFormat,
           rate: 1,
+          outputGain,
+          normalizeAudio,
         }),
       });
       if (!r.ok) {
@@ -427,6 +432,26 @@ export default function VoiceCloning() {
             onChange={(e) => setText(e.target.value)}
           />
         </label>
+        <label>
+          Output volume {Math.round(outputGain * 100)}%
+          <input
+            aria-label="Output volume"
+            type="range"
+            min="0"
+            max="3"
+            step="0.05"
+            value={outputGain}
+            onChange={(e) => setOutputGain(+e.target.value)}
+          />
+        </label>
+        <label className="inline-check">
+          <input
+            type="checkbox"
+            checked={normalizeAudio}
+            onChange={(e) => setNormalizeAudio(e.target.checked)}
+          />{" "}
+          Auto loudness for quiet speech
+        </label>
         <p>
           {text.length}/600 characters. A reference in the same language usually
           gives better pronunciation.
@@ -448,7 +473,7 @@ export default function VoiceCloning() {
             <strong>
               {result.profile} · {result.duration.toFixed(1)}s · Generated voice
             </strong>
-            <audio controls src={result.url} />
+            <AudioPlayer key={result.url} src={result.url} />
             <div className="clone-times">
               <button
                 onClick={() =>

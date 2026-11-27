@@ -1,5 +1,6 @@
 import { z } from "zod";
 import neuralVoices from "./voice-catalog.json";
+import { voiceDelivery, type VoiceDelivery } from "./voice-delivery";
 export type VoiceProfile = {
   id: string;
   name: string;
@@ -9,6 +10,7 @@ export type VoiceProfile = {
   engine: string;
   styleMode: string;
   neural: boolean;
+  delivery: VoiceDelivery;
 };
 export const emotions = [
   "Neutral",
@@ -88,7 +90,7 @@ export const voices: VoiceProfile[] = [
     styleMode: "approximate",
     neural: false,
   })),
-];
+].map((v) => ({ ...v, delivery: voiceDelivery(v.id) }));
 export const inputSchema = z
   .object({
     text: z.string().trim().min(1).max(3000),
@@ -101,6 +103,8 @@ export const inputSchema = z
     pitch: z.number().min(0.5).max(1.5).default(1),
     format: z.enum(["wav", "mp3"]).default("wav"),
     style: z.string().trim().max(1200).default(""),
+    outputGain: z.number().min(0).max(3).default(1),
+    normalizeAudio: z.boolean().default(true),
   })
   .superRefine((data, ctx) => {
     const profile = voices.find((v) => v.id === data.voice);
@@ -134,6 +138,8 @@ export function synthesisKey(input: SynthesisInput) {
     input.pitch,
     input.format,
     input.style,
+    input.outputGain ?? 1,
+    input.normalizeAudio ?? true,
   ]);
 }
 export function detectLanguage(text: string) {

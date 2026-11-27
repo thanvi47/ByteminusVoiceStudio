@@ -2196,3 +2196,54 @@ audio {
   font-style: normal;
   color: var(--director-accent);
 }
+.inline-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  flex-direction: row !important;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.inline-check input[type="checkbox"] {
+  width: auto !important;
+  flex: 0 0 auto;
+  accent-color: var(--purple);
+}
+.volume-player {
+  width: 100%;
+  min-width: 0;
+}
+.volume-player audio {
+  width: 100%;
+}
+.volume-player label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+}
+.volume-player input[type="range"] {
+  min-width: 120px;
+  flex: 1;
+  accent-color: var(--purple);
+}
+.volume-player small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.output-volume-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  font-size: 14px;
+  margin-right: 12px;
+}
+.output-volume-control input {
+  accent-color: var(--director-accent);
+}

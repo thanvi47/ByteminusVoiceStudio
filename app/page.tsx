@@ -40,6 +40,7 @@ import {
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
 import VoiceCloning from "./voice-cloning";
 import VoicePlayground from "./voice-playground";
+import AudioPlayer from "./audio-player";
 type Clip = {
   id: string;
   name: string;
@@ -82,6 +83,9 @@ export default function Studio() {
   const [intensity, setIntensity] = useState(50);
   const [rate, setRate] = useState(1);
   const [pitch, setPitch] = useState(1);
+  const [outputGain, setOutputGain] = useState(1);
+  const [normalizeAudio, setNormalizeAudio] = useState(true);
+  const [autoDelivery, setAutoDelivery] = useState(true);
   const [format, setFormat] = useState<"wav" | "mp3">("wav");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -177,13 +181,25 @@ export default function Studio() {
       (libraryGender === "All" || v.gender === libraryGender) &&
       (showLegacy || v.neural) &&
       (engineFilter === "all" || v.engine === engineFilter) &&
-      `${v.name} ${v.accent}`.toLowerCase().includes(search.toLowerCase()),
+      `${v.name} ${v.accent} ${v.delivery.label}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
   function changeLanguage(value: string) {
     setLanguage(value);
     setGender("All");
     const selected = voices.find((v) => v.language === value && v.neural);
-    if (selected) setVoice(selected.id as SynthesisInput["voice"]);
+    if (selected) chooseVoice(selected.id);
+  }
+  function chooseVoice(id: string) {
+    setVoice(id);
+    const profile = voices.find((v) => v.id === id);
+    if (autoDelivery && profile) {
+      setEmotion(profile.delivery.emotion);
+      setStyle(
+        profile.styleMode === "prompted" ? profile.delivery.description : "",
+      );
+    }
   }
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -249,6 +265,8 @@ export default function Studio() {
       pitch,
       format,
       style,
+      outputGain,
+      normalizeAudio,
     };
     setProgress(
       voices.find((v) => v.id === requestedVoice)?.styleMode === "prompted"
@@ -349,6 +367,8 @@ export default function Studio() {
     pitch,
     format,
     style,
+    outputGain,
+    normalizeAudio,
   };
   const currentResult =
     active &&
@@ -653,6 +673,8 @@ export default function Studio() {
                 setPitch(value.pitch);
                 setFormat(value.format);
                 setStyle(value.style);
+                setOutputGain(value.outputGain);
+                setNormalizeAudio(value.normalizeAudio);
                 setGender("All");
                 setSection("Voice studio");
               }}
@@ -782,6 +804,8 @@ export default function Studio() {
                         setEmotion("Neutral");
                         setRate(1);
                         setPitch(1);
+                        setOutputGain(1);
+                        setNormalizeAudio(true);
                         setIntensity(50);
                       }}
                     >
@@ -829,7 +853,7 @@ export default function Studio() {
                                   v.language === language &&
                                   (g === "All" || v.gender === g),
                               );
-                              if (v) setVoice(v.id as SynthesisInput["voice"]);
+                              if (v) chooseVoice(v.id);
                             }}
                           >
                             {g}
@@ -840,9 +864,7 @@ export default function Studio() {
                     <select
                       aria-label="Voice"
                       value={voice}
-                      onChange={(e) =>
-                        setVoice(e.target.value as SynthesisInput["voice"])
-                      }
+                      onChange={(e) => chooseVoice(e.target.value)}
                     >
                       {voices
                         .filter(
@@ -858,6 +880,7 @@ export default function Studio() {
                             disabled={v.neural && !engines[v.engine]}
                           >
                             {v.name}
+                            {` · ${v.delivery.label}`}
                             {v.gender === "Unspecified" ? "" : ` · ${v.gender}`}
                             {v.neural && !engines[v.engine]
                               ? " · Setup required"
@@ -897,6 +920,24 @@ export default function Studio() {
                         )}
                       </button>
                     </div>
+                    <p className="sample-note">
+                      <strong>
+                        Suggested delivery: {choice.delivery.label}
+                      </strong>
+                      <br />
+                      {choice.delivery.description}{" "}
+                      {choice.styleMode === "prompted"
+                        ? "Editable model direction; not a fixed voice trait."
+                        : "Applied as a speed/pitch effect; this engine cannot act emotions."}
+                    </p>
+                    <label className="inline-check">
+                      <input
+                        type="checkbox"
+                        checked={autoDelivery}
+                        onChange={(e) => setAutoDelivery(e.target.checked)}
+                      />{" "}
+                      Apply suggested delivery when choosing a voice
+                    </label>
                     <p className="sample-note">
                       {previewSamples[voice]
                         ? `Neutral voice sample · ${previewSamples[voice].duration.toFixed(1)}s · emotion/speed/pitch এখানে বদলায় না`
@@ -974,6 +1015,30 @@ export default function Studio() {
                       <span>Subtle</span>
                       <span>Expressive</span>
                     </div>
+                    <label className="range-label">
+                      Output volume <span>{Math.round(outputGain * 100)}%</span>
+                      <input
+                        aria-label="Output volume"
+                        type="range"
+                        min="0"
+                        max="3"
+                        step="0.05"
+                        value={outputGain}
+                        onChange={(e) => setOutputGain(+e.target.value)}
+                      />
+                    </label>
+                    <label className="inline-check">
+                      <input
+                        type="checkbox"
+                        checked={normalizeAudio}
+                        onChange={(e) => setNormalizeAudio(e.target.checked)}
+                      />{" "}
+                      Auto loudness for quiet speech
+                    </label>
+                    <p className="sample-note">
+                      Output volume applies to the next generated download.
+                      Playback volume below the player changes immediately.
+                    </p>
                     <button
                       className="advanced-toggle"
                       onClick={() => setAdvanced(!advanced)}
@@ -1088,10 +1153,9 @@ export default function Studio() {
                         />
                       ))}
                     </div>
-                    <audio
-                      ref={audio}
+                    <AudioPlayer
+                      audioRef={audio}
                       key={active.id}
-                      controls
                       src={active.url}
                       preload="metadata"
                       onPlay={() => {
@@ -1226,6 +1290,9 @@ export default function Studio() {
                     </span>
                     <h2>{v.name}</h2>
                     <p>
+                      Suggested: {v.delivery.label} · {v.delivery.description}
+                    </p>
+                    <p>
                       {v.accent}
                       {v.gender === "Unspecified" ? "" : ` · ${v.gender}`}
                     </p>
@@ -1265,7 +1332,7 @@ export default function Studio() {
                         onClick={() => {
                           setLanguage(v.language);
                           setGender("All");
-                          setVoice(v.id as SynthesisInput["voice"]);
+                          chooseVoice(v.id);
                           setSection("Voice studio");
                         }}
                       >
@@ -1572,7 +1639,7 @@ function Dialogue({
           >
             {voices.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} · {v.gender}
+                {v.name} · {v.delivery.label} · {v.gender}
               </option>
             ))}
           </select>

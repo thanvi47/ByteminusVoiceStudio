@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir, access } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { Mp3Encoder } from "@breezystack/lamejs";
+import { masterPcm } from "../lib/audio-levels.mjs";
 const root = process.cwd();
 const catalog = JSON.parse(
   await readFile("lib/voice-catalog.json", "utf8"),
@@ -73,6 +74,7 @@ async function publish() {
       continue;
     }
     const { pcm, sampleRate } = readWav(await readFile(source));
+    pcm.set(masterPcm(pcm, sampleRate));
     const encoder = new Mp3Encoder(1, sampleRate, 96);
     const chunks = [];
     for (let i = 0; i < pcm.length; i += 1152)
@@ -100,7 +102,9 @@ async function publish() {
   );
 }
 await publish();
-for (const engine of ["mithi", "kokoro", "parler"]) {
+for (const engine of process.argv.includes("--publish-only")
+  ? []
+  : ["mithi", "kokoro", "parler"]) {
   await run(python(engine === "parler" ? ".runtime/parler-env" : ".venv"), [
     "-m",
     "neural.build_previews",

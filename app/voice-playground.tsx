@@ -32,6 +32,7 @@ import {
   type Recipe,
 } from "@/lib/director";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
+import AudioPlayer from "./audio-player";
 type Take = {
   id: string;
   input: SynthesisInput;
@@ -84,6 +85,7 @@ export default function VoicePlayground({
       "JavaScript" | "Python" | "cURL"
     >("JavaScript");
   const [voicePage, setVoicePage] = useState(0);
+  const [autoDelivery, setAutoDelivery] = useState(true);
   const samplePlayer = useRef<HTMLAudioElement>(null),
     players = useRef<(HTMLAudioElement | null)[]>([]),
     takeRef = useRef<Take[]>([]);
@@ -177,6 +179,13 @@ export default function VoicePlayground({
   function pickVoice(id: string) {
     const profile = voices.find((v) => v.id === id);
     patch({ voice: id });
+    if (autoDelivery && profile) {
+      const match =
+        vibes.find((v) => v.emotion === profile.delivery.emotion) ?? vibes[0];
+      setVibeId(match.id);
+      setDirections({ ...match.directions });
+      patch({ emotion: profile.delivery.emotion });
+    }
     setVoicePage(
       Math.floor(
         voices
@@ -383,13 +392,13 @@ export default function VoicePlayground({
                   className="director-select-voice"
                   aria-pressed={input.voice === v.id}
                   disabled={busy}
-                  onClick={() => patch({ voice: v.id })}
+                  onClick={() => pickVoice(v.id)}
                 >
                   <span className={`voice-orb orb-${i % 4}`}>
                     {v.name.slice(0, 1)}
                   </span>
                   <strong>{v.name.split(" · ")[0]}</strong>
-                  <small>{v.accent}</small>
+                  <small>Suggested: {v.delivery.label}</small>
                 </button>
                 <button
                   className="director-sample"
@@ -424,14 +433,27 @@ export default function VoicePlayground({
               aria-label="Playground voice"
               value={input.voice}
               disabled={busy}
-              onChange={(e) => patch({ voice: e.target.value })}
+              onChange={(e) => pickVoice(e.target.value)}
             >
               {available.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name}
+                  {v.name} · {v.delivery.label}
                 </option>
               ))}
             </select>
+          </label>
+          <p className="director-note">
+            <strong>Suggested delivery: {selected.delivery.label}</strong> ·{" "}
+            {selected.delivery.description} These are editable suggestions, not
+            fixed voice traits.
+          </p>
+          <label className="inline-check">
+            <input
+              type="checkbox"
+              checked={autoDelivery}
+              onChange={(e) => setAutoDelivery(e.target.checked)}
+            />{" "}
+            Apply suggested delivery when choosing a voice
           </label>
           <p className="director-note">
             Sample buttons play a saved neutral recording. Vibes and settings
@@ -640,6 +662,26 @@ export default function VoicePlayground({
             </p>
           )}
           <div className="director-generate">
+            <label className="output-volume-control">
+              Output volume {Math.round(input.outputGain * 100)}%
+              <input
+                aria-label="Output volume"
+                type="range"
+                min="0"
+                max="3"
+                step="0.05"
+                value={input.outputGain}
+                onChange={(e) => patch({ outputGain: +e.target.value })}
+              />
+            </label>
+            <label className="inline-check">
+              <input
+                type="checkbox"
+                checked={input.normalizeAudio}
+                onChange={(e) => patch({ normalizeAudio: e.target.checked })}
+              />{" "}
+              Auto loudness for quiet speech
+            </label>
             <button
               className="primary"
               disabled={!canGenerate}
@@ -784,9 +826,8 @@ export default function VoicePlayground({
                   {t.vibe} · {t.input.emotion} · {t.input.rate.toFixed(2)}×
                   speed · {t.input.pitch.toFixed(2)}× pitch
                 </p>
-                <audio
-                  controls
-                  ref={(el) => {
+                <AudioPlayer
+                  audioRef={(el) => {
                     players.current[i] = el;
                   }}
                   src={t.url}

@@ -2,6 +2,7 @@ import { authenticated, error, rateLimit, sameOrigin } from "@/lib/auth";
 import { cloneGenerateSchema } from "@/lib/clone";
 import { profileFolder } from "@/lib/clone-store";
 import { encode } from "@/lib/tts";
+import { masterPcm } from "@/lib/audio-levels.mjs";
 import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import path from "node:path";
@@ -96,6 +97,12 @@ export async function POST(request: Request) {
       throw new Error("No valid audio generated.");
     const pcm = new Int16Array(data.length / 2);
     for (let i = 0; i < pcm.length; i++) pcm[i] = data.readInt16LE(i * 2);
+    pcm.set(
+      masterPcm(pcm, 24000, {
+        gain: input.outputGain,
+        normalize: input.normalizeAudio,
+      }),
+    );
     return new Response(new Uint8Array(encode(pcm, 24000, input.format)), {
       headers: {
         "Content-Type": input.format === "wav" ? "audio/wav" : "audio/mpeg",

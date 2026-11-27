@@ -20,6 +20,8 @@ export const cloneGenerateSchema = z.object({
   language: z.enum(["bn", "en"]),
   format: z.enum(["wav", "mp3"]),
   rate: z.number().min(0.75).max(1.5).default(1),
+  outputGain: z.number().min(0).max(3).default(1),
+  normalizeAudio: z.boolean().default(true),
 });
 // Browser exports one exact PCM format; reject malformed or disguised uploads.
 export function validateReferenceWav(b: Buffer) {
