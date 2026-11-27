@@ -107,7 +107,7 @@ npm run doctor
 npm run dev
 ```
 
-আগে সব feature install করলে setup-এ `--all` রাখুন। Model download সম্পূর্ণ থাকলে reuse হয়। নতুন folder/অন্য OS-এ `.venv`/`.runtime` copy করবেন না—আবার setup চালান। ZIP থেকে install করলে নতুন source ZIP নামিয়ে setup দিন; `.git` ছাড়া git pull কাজ করে না। পুরোনো release ZIP-এ এই Unix installer নেই; script-সহ নতুন main/source version নিন।
+আগে সব feature install করলে setup-এ `--all` রাখুন। Model download সম্পূর্ণ থাকলে reuse হয়। নতুন folder/অন্য OS-এ `.venv`/`.runtime` copy করবেন না—আবার setup চালান। ZIP থেকে install করলে নতুন source ZIP নামিয়ে setup দিন; `.git` ছাড়া git pull কাজ করে না। v0.1.0 ZIP-এ Unix installer নেই; v0.1.1 বা নতুন main/source version নিন।
 
 ## ৭. Troubleshooting
 

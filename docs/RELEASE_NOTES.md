@@ -13,6 +13,17 @@ npm run dev
 
 For all optional features, approve Indic model access in your own Hugging Face account first and use `./scripts/setup.ps1 -All`. Full Bengali instructions: **docs/INSTALL.bn.md** inside the archive or the repository. Optional cloning weights have noncommercial/community terms; read THIRD_PARTY_NOTICES.md.
 
+## macOS Apple Silicon / Ubuntu Linux
+
+Install Node.js 22+ and the native audio/build dependencies described in **docs/INSTALL.mac-linux.bn.md**, then run:
+
+```bash
+bash scripts/setup.sh
+npm run dev
+```
+
+`bash scripts/setup.sh --all` includes optional models after your own HF approval. Apple Silicon macOS currently runs on CPU, not MPS; Intel macOS is unsupported by the pinned PyTorch wheel. Ubuntu/Linux supports CPU and compatible NVIDIA CUDA. AMD DirectML/ROCm acceleration is not implemented; an AMD RX 570 uses CPU. Unix CI checks package installation/imports without model downloads; those checks are not full neural-generation benchmarks.
+
 The ZIP contains tracked source, dependency locks, setup/download scripts, documentation and generic demo samples. **Python environments, node_modules, multi-GB model weights, credentials and private recordings are not included.** Setup downloads them separately as needed. Synthesis needs the local Python service on the same computer. This is a source package, not a standalone Windows executable.
 
 CPU workflows have been exercised locally. GPU selection is implemented but RTX 5090 inference was not directly benchmarked on the CPU-only test machine. Emotional acting varies and SRT timing is estimated. No paid inference provider is required.
