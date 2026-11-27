@@ -175,7 +175,21 @@ export const vibes: Vibe[] = [
     "Curiosity and understated awe.",
   ),
 ];
-export const demoScripts: { id: string; name: string; text: string; emotion?: "Excited" | "Scared" }[] = [
+export const demoScripts: { id: string; name: string; text: string; emotion?: "Excited" | "Scared"; language?: "bn" | "en" }[] = [
+  {
+    id: "bn-excited",
+    name: "বাংলা · Excited demo",
+    emotion: "Excited",
+    language: "bn",
+    text: "আমরা পেরেছি! বিশ্বাসই হচ্ছে না! আজকের দিনটা সত্যিই অসাধারণ!",
+  },
+  {
+    id: "bn-scared",
+    name: "বাংলা · Scared demo",
+    emotion: "Scared",
+    language: "bn",
+    text: "দাঁড়াও। শব্দটা শুনলে? দরজার বাইরে কেউ আছে। দয়া করে কোনো শব্দ কোরো না।",
+  },
   {
     id: "excited",
     name: "English · Excited demo",

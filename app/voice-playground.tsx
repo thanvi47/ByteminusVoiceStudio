@@ -559,7 +559,7 @@ export default function VoicePlayground({
                 if (demo) {
                   patch({ text: demo.text });
                   if (demo.emotion) {
-                    patch({ voice: "parler:Jon", emotion: demo.emotion, rate: 1, pitch: 1, intensity: 70 });
+                    patch({ voice: demo.language === "bn" ? "indic:Arjun" : "parler:Jon", emotion: demo.emotion, rate: 1, pitch: 1, intensity: 70 });
                     setVoicePage(0);
                     const v = directionsForEmotion(demo.emotion)!;
                     setVibeId(v.id);

@@ -984,7 +984,7 @@ export default function Studio() {
                       onChange={(e) => {
                         const next = e.target.value as SynthesisInput["emotion"];
                         setEmotion(next);
-                        if (choice.engine === "parler" && (next === "Excited" || next === "Scared")) {
+                        if (choice.styleMode === "prompted" && (next === "Excited" || next === "Scared")) {
                           setStyle("");
                           setRate(1);
                           setPitch(1);

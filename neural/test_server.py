@@ -20,6 +20,15 @@ class ProtocolTests(unittest.TestCase):
         audio = np.arange(20, dtype=np.float32)
         self.assertIs(apply_controls(audio, 1, 1), audio)
 
+    def test_bengali_emotions_use_model_training_labels(self):
+        from neural.parler_worker import description
+        base = {"voice": "indic:Arjun", "intensity": 70, "style": ""}
+        happy = description({**base, "emotion": "Excited"})
+        fear = description({**base, "emotion": "Scared"})
+        self.assertIn("happy and surprised", happy)
+        self.assertIn("fearful", fear)
+        self.assertNotIn("natural speaking rate", happy + fear)
+
     def test_numeric_expressive_speed_and_pitch_change_the_signal(self):
         import numpy as np
         from neural.parler_worker import apply_controls
