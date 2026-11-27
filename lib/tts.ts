@@ -54,7 +54,7 @@ export async function neuralStatus() {
     };
   } catch {
     return {
-      engines: { mithi: false, kokoro: false, parler: false },
+      engines: { mithi: false, kokoro: false, parler: false, indic: false },
       device: "unavailable",
     };
   }
@@ -156,6 +156,12 @@ export const provider: TTSProvider = {
         languages: ["en-US", "en-GB"],
       },
       { id: "parler", neural: true, styleMode: "prompted", languages: ["en"] },
+      {
+        id: "indic",
+        neural: true,
+        styleMode: "prompted",
+        languages: ["bn-expressive"],
+      },
       { id: "espeak", neural: false, styleMode: "approximate", legacy: true },
     ],
     formats: ["wav", "mp3"],

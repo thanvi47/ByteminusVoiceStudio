@@ -1,4 +1,4 @@
-"""Download pinned public model files. No accounts, hosted inference, or billing."""
+"""Download pinned model files. Optional Indic weights require approved HF access."""
 
 import argparse
 import concurrent.futures
@@ -8,6 +8,27 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {
+    "indic": (
+        "ai4bharat/indic-parler-tts",
+        "660bc53c64ae83150613264111708a0465211237",
+        lambda p: (
+            p.endswith((".json", ".safetensors", ".model"))
+            or p in {"LICENSE", "README.md"}
+        ),
+    ),
+    "indic-description": (
+        "google/mt5-base",
+        "2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f",
+        lambda p: (
+            p
+            in {
+                "config.json",
+                "tokenizer_config.json",
+                "special_tokens_map.json",
+                "spiece.model",
+            }
+        ),
+    ),
     "omnivoice": (
         "k2-fsa/OmniVoice",
         "3fc979d1cd72492cd679c5ac2611e0d7ac047ba1",
@@ -55,6 +76,14 @@ def download(name):
     sha = metadata["sha"]
     folder = ROOT / ".models" / name
     folder.mkdir(parents=True, exist_ok=True)
+    if name == "indic":
+        from huggingface_hub import get_token
+
+        token = get_token()
+        if not token:
+            raise RuntimeError(
+                "Sign in using hf auth login and accept access at https://huggingface.co/ai4bharat/indic-parler-tts first. No paid subscription is needed."
+            )
 
     def fetch(entry):
         relative = entry["rfilename"]
@@ -68,6 +97,12 @@ def download(name):
             return
         temporary = target.with_name(target.name + ".partial")
         print(f"Downloading {name}/{relative}", flush=True)
+        # Authenticated gated files use the official Hub client so redirect credentials are handled safely.
+        if name == "indic":
+            from huggingface_hub import hf_hub_download
+
+            hf_hub_download(repo, relative, revision=sha, local_dir=folder, token=token)
+            return
         urllib.request.urlretrieve(
             f"https://huggingface.co/{repo}/resolve/{sha}/{relative}", temporary
         )

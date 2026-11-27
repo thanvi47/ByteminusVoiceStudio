@@ -77,22 +77,32 @@ def description(data):
         "Documentary Narration": "measured, thoughtful and engaging",
         "Storytelling": "expressive, animated and engaging",
     }
-    pace = (
-        "slow" if data["rate"] < 0.9 else "fast" if data["rate"] > 1.15 else "moderate"
-    )
-    pitch = (
-        "low" if data["pitch"] < 0.9 else "high" if data["pitch"] > 1.1 else "moderate"
-    )
-    return f"{speaker} speaks in a {emphasis} {styles.get(emotion, 'natural')} tone, with a {pace} speaking rate and {pitch} pitch. Very clear audio, close recording, no background noise. {data.get('style', '')}"
+    return f"{speaker} speaks in a {emphasis} {styles.get(emotion, 'natural')} tone, with a natural speaking rate and natural pitch. Very clear audio, close recording, no background noise. {data.get('style', '')}"
 
 
-def load_model():
+def apply_controls(audio, rate, pitch):
+    """Apply numeric sliders independently of model prompt response."""
+    if abs(rate - 1) > 0.001 or abs(pitch - 1) > 0.001:
+        import librosa
+
+        if abs(rate - 1) > 0.001:
+            audio = librosa.effects.time_stretch(audio, rate=rate)
+        if abs(pitch - 1) > 0.001:
+            audio = librosa.effects.pitch_shift(
+                audio, sr=24000, n_steps=12 * math.log2(pitch)
+            )
+    return audio
+
+
+def load_model(engine="parler"):
     import torch
     from parler_tts import ParlerTTSForConditionalGeneration
     from transformers import AutoTokenizer
 
     torch.set_num_threads(min(4, os.cpu_count() or 1))
-    folder = str(ROOT / ".models/parler")
+    if engine not in {"parler", "indic"}:
+        raise ValueError("Unknown expressive engine")
+    folder = str(ROOT / ".models" / engine)
     print("Loading expressive model on CPU...", flush=True)
     model = (
         ParlerTTSForConditionalGeneration.from_pretrained(
@@ -102,6 +112,13 @@ def load_model():
         .eval()
     )
     tokenizer = AutoTokenizer.from_pretrained(folder, local_files_only=True)
+    if engine == "indic":
+        tokenizer = (
+            tokenizer,
+            AutoTokenizer.from_pretrained(
+                str(ROOT / ".models/indic-description"), local_files_only=True
+            ),
+        )
     return model, tokenizer
 
 
@@ -110,7 +127,10 @@ def synthesize(data, model, tokenizer):
     import torch
     from scipy.signal import resample_poly
 
-    inputs = tokenizer(description(data), return_tensors="pt")
+    prompt_tokenizer, description_tokenizer = (
+        tokenizer if isinstance(tokenizer, tuple) else (tokenizer, tokenizer)
+    )
+    inputs = description_tokenizer(description(data), return_tensors="pt")
     chunks = []
     length = 0
     torch.manual_seed(42)
@@ -120,7 +140,7 @@ def synthesize(data, model, tokenizer):
         elif not part.strip():
             continue
         else:
-            prompt = tokenizer(part, return_tensors="pt")
+            prompt = prompt_tokenizer(part, return_tensors="pt")
             with torch.inference_mode():
                 generation = model.generate(
                     input_ids=inputs.input_ids,
@@ -138,6 +158,7 @@ def synthesize(data, model, tokenizer):
                 )
             factor = math.gcd(sr, 24000)
             audio = resample_poly(audio, 24000 // factor, sr // factor)
+            audio = apply_controls(audio, data["rate"], data["pitch"])
         audio = np.asarray(audio, dtype=np.float32).reshape(-1)
         length += len(audio)
         if length > 90 * 24000:
@@ -151,6 +172,6 @@ def synthesize(data, model, tokenizer):
 if __name__ == "__main__":
     data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     with contextlib.redirect_stdout(sys.stderr):
-        model, tokenizer = load_model()
+        model, tokenizer = load_model(data.get("engine", "parler"))
         output = synthesize(data, model, tokenizer)
     sys.stdout.buffer.write(output)

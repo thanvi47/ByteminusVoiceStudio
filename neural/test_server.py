@@ -4,6 +4,48 @@ from neural.server import app, script_parts
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_numeric_expressive_speed_and_pitch_change_the_signal(self):
+        import numpy as np
+        from neural.parler_worker import apply_controls
+
+        audio = np.sin(2 * np.pi * 120 * np.arange(24000) / 24000).astype(np.float32)
+        self.assertEqual(len(apply_controls(audio, 0.8, 1)), 30000)
+        raised = apply_controls(audio, 1, 1.25)
+        self.assertEqual(len(raised), len(audio))
+        frequency = np.fft.rfftfreq(len(raised), 1 / 24000)[
+            np.argmax(np.abs(np.fft.rfft(raised)))
+        ]
+        self.assertAlmostEqual(frequency, 150, delta=3)
+
+    def test_indic_prompt_and_description_tokenizers_are_separate(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        import torch
+        from neural.parler_worker import synthesize
+
+        encoded = SimpleNamespace(
+            input_ids=torch.tensor([[1]]), attention_mask=torch.tensor([[1]])
+        )
+        prompt, description = Mock(return_value=encoded), Mock(return_value=encoded)
+        model = SimpleNamespace(
+            generate=Mock(return_value=torch.ones(1, 2400) * 0.1),
+            config=SimpleNamespace(sampling_rate=24000),
+            audio_encoder=SimpleNamespace(config=SimpleNamespace(frame_rate=50)),
+        )
+        data = {
+            "voice": "indic:Arjun",
+            "text": "আমি বাংলা বলি।",
+            "emotion": "Happy",
+            "intensity": 80,
+            "rate": 1,
+            "pitch": 1,
+            "style": "",
+        }
+        self.assertEqual(len(synthesize(data, model, (prompt, description))), 4800)
+        self.assertEqual(prompt.call_args.args[0], data["text"])
+        self.assertIn("Arjun", description.call_args.args[0])
+        self.assertIn("happy", description.call_args.args[0])
+
     def test_clone_stdin_preserves_bengali_on_windows(self):
         import json
         from neural.clone_worker import decode_request

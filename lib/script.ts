@@ -117,6 +117,18 @@ export const inputSchema = z
       });
   });
 export type SynthesisInput = z.infer<typeof inputSchema>;
+export function synthesisKey(input: SynthesisInput) {
+  return JSON.stringify([
+    input.text,
+    input.voice,
+    input.emotion,
+    input.intensity,
+    input.rate,
+    input.pitch,
+    input.format,
+    input.style,
+  ]);
+}
 export function detectLanguage(text: string) {
   return /[\u0980-\u09ff]/u.test(text) ? "bn" : "en-US";
 }

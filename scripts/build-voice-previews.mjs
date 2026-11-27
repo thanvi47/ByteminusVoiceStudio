@@ -4,7 +4,9 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { Mp3Encoder } from "@breezystack/lamejs";
 const root = process.cwd();
-const catalog = JSON.parse(await readFile("lib/voice-catalog.json", "utf8"));
+const catalog = JSON.parse(
+  await readFile("lib/voice-catalog.json", "utf8"),
+).filter((v) => ["mithi", "kokoro", "parler"].includes(v.engine));
 const folder = "public/voice-previews/v1";
 await mkdir(folder, { recursive: true });
 const python = (env) =>

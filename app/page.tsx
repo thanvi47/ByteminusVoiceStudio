@@ -34,6 +34,7 @@ import {
   sentences,
   srt,
   voices,
+  synthesisKey,
   type SynthesisInput,
 } from "@/lib/script";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
@@ -49,6 +50,8 @@ type Clip = {
   created: string;
   voice: string;
   subtitles: string;
+  input: SynthesisInput;
+  settingsTest: boolean;
 };
 type Project = {
   id: string;
@@ -225,12 +228,26 @@ export default function Studio() {
       setError("Device storage is full. Export your script as TXT.");
     }
   }
-  async function generate(overrideText?: string, overrideVoice?: string) {
+  async function generate(
+    overrideText?: string,
+    overrideVoice?: string,
+    settingsTest = false,
+  ) {
     const source = overrideText ?? text;
     if (!source.trim() || busy) return;
     setBusy(true);
     setError("");
     const requestedVoice = (overrideVoice ?? voice) as SynthesisInput["voice"];
+    const requestInput = {
+      text: source,
+      voice: requestedVoice,
+      emotion,
+      intensity,
+      rate,
+      pitch,
+      format,
+      style,
+    };
     setProgress(
       voices.find((v) => v.id === requestedVoice)?.styleMode === "prompted"
         ? "Loading expressive voice and generating on CPU. This can take several minutes…"
@@ -240,16 +257,7 @@ export default function Studio() {
       const r = await fetch("/api/tts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: source,
-          voice: requestedVoice,
-          emotion,
-          intensity,
-          rate,
-          pitch,
-          format,
-          style,
-        }),
+        body: JSON.stringify(requestInput),
       });
       if (!r.ok) {
         const d = await r.json();
@@ -269,10 +277,16 @@ export default function Studio() {
         created: new Date().toISOString(),
         voice: requestedVoice,
         subtitles: srt(source, Number(r.headers.get("X-Audio-Duration"))),
+        input: requestInput,
+        settingsTest,
       };
       setClips((old) => [clip, ...old]);
       setActive(clip);
-      setNotice("Your audio is ready.");
+      setNotice(
+        settingsTest
+          ? "Current settings test is ready in Audio preview. Press play to listen."
+          : "Your audio is ready.",
+      );
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Generation failed. Please retry.",
@@ -324,8 +338,22 @@ export default function Studio() {
     setClips((old) => old.filter((c) => c.id !== id));
     if (active?.id === id) setActive(undefined);
   }
+  const currentInput = {
+    text,
+    voice,
+    emotion,
+    intensity,
+    rate,
+    pitch,
+    format,
+    style,
+  };
   const currentResult =
-    active?.text === text && active?.voice === voice ? active : undefined;
+    active &&
+    !active.settingsTest &&
+    synthesisKey(active.input) === synthesisKey(currentInput)
+      ? active
+      : undefined;
   const generationControls = (
     <div className="editor-actions">
       <div className="generation-bar panel">
@@ -384,6 +412,13 @@ export default function Studio() {
           </span>
         </div>
       </div>
+      {active && !currentResult && (
+        <p className="settings-changed" role="status">
+          {active.settingsTest
+            ? "Short settings test below. Generate voice + SRT to render your full script."
+            : "Settings or script changed. Generate again to apply them; Audio preview still contains the previous recording."}
+        </p>
+      )}
       {busy && (
         <div role="status" className="progress">
           <span className="spin">
@@ -723,6 +758,9 @@ export default function Studio() {
                         onChange={(e) => changeLanguage(e.target.value)}
                       >
                         <option value="bn">বাংলা · Bengali</option>
+                        <option value="bn-expressive">
+                          বাংলা · Bengali · Expressive
+                        </option>
                         <option value="en-US">English · United States</option>
                         <option value="en-GB">English · United Kingdom</option>
                         <option value="en">
@@ -823,16 +861,41 @@ export default function Studio() {
                     </div>
                     <p className="sample-note">
                       {previewSamples[voice]
-                        ? `Saved neutral sample · ${previewSamples[voice].duration.toFixed(1)}s · click to listen`
+                        ? `Neutral voice sample · ${previewSamples[voice].duration.toFixed(1)}s · emotion/speed/pitch এখানে বদলায় না`
                         : "Saved sample is being prepared."}
                     </p>
+                    <button
+                      disabled={
+                        busy ||
+                        !text.trim() ||
+                        (choice.neural && !engines[choice.engine])
+                      }
+                      onClick={() => {
+                        const plain = text.replace(
+                          /\[(?:pause|break)[^\]]*\]/gi,
+                          " ",
+                        );
+                        void generate(
+                          sentences(plain)[0]?.slice(0, 160) ||
+                            plain.slice(0, 160),
+                          voice,
+                          true,
+                        );
+                      }}
+                    >
+                      Test current settings
+                    </button>
                     <div className="line" />
                     <label className="label-row">
-                      <span>Emotion & delivery</span>
+                      <span>
+                        {choice.styleMode === "prompted"
+                          ? "Emotion & delivery"
+                          : "Delivery effect · speed/pitch only"}
+                      </span>
                       <span className="subtle-tag">
                         {choice.styleMode === "prompted"
                           ? "PROMPTED STYLE"
-                          : "APPROXIMATED"}
+                          : "NO EMOTION MODEL"}
                       </span>
                     </label>
                     <select
@@ -907,14 +970,27 @@ export default function Studio() {
                     )}
                     <p className="capability-note">
                       {choice.styleMode === "prompted"
-                        ? "Parler interprets your direction during synthesis. Emotion, intensity, speed and pitch are descriptive prompts, not exact controls. CPU generation is slower; use short sentences."
+                        ? "Emotion and intensity guide the expressive model; exact acting varies. Speed and pitch sliders are applied to the generated speech. CPU generation is slower; use short sentences."
                         : choice.neural
-                          ? "Neural speech. Emotion presets approximate delivery with speed and pitch; native emotional acting is not supported by this engine."
+                          ? "This engine cannot act emotions. These effects only adjust speed and pitch; Funny, Sad and Whisper do not create laughter, sadness or real whispering. Use Test current settings to generate a new test."
                           : "Legacy robotic speech. Choose a neural voice for more natural audio."}
                       {choice.language === "bn"
                         ? " Bengali regional accent is not verified."
                         : ""}
                     </p>
+                    {choice.language === "bn" && choice.engine === "mithi" && (
+                      <p className="capability-note">
+                        বাংলায় emotional acting-এর জন্য Indic Parler দরকার।{" "}
+                        <a
+                          href="https://huggingface.co/ai4bharat/indic-parler-tts"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          ফ্রি model access নিন
+                        </a>
+                        ; তারপর Bengali · Expressive নির্বাচন করুন।
+                      </p>
+                    )}
                     {choice.neural && !engines[choice.engine] && (
                       <p className="capability-note error">
                         {choice.engine} is unavailable. Run{" "}
@@ -945,6 +1021,23 @@ export default function Studio() {
                 </div>
                 {active ? (
                   <div className="player-content">
+                    <p className="rendered-settings">
+                      <strong>
+                        {active.settingsTest
+                          ? "Settings test"
+                          : "Generated recording"}{" "}
+                        · {voices.find((v) => v.id === active.voice)?.name}
+                      </strong>
+                      <br />
+                      {active.input.emotion}{" "}
+                      {voices.find((v) => v.id === active.voice)?.styleMode ===
+                      "prompted"
+                        ? "(model direction)"
+                        : "(speed/pitch effect)"}{" "}
+                      · Speed {active.input.rate.toFixed(2)}× · Pitch{" "}
+                      {active.input.pitch.toFixed(2)}× · Intensity{" "}
+                      {active.input.intensity}%
+                    </p>
                     <div
                       className="waveform"
                       aria-label="Generated audio amplitude waveform"

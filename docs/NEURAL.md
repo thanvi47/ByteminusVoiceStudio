@@ -2,7 +2,7 @@
 
 Choose Bengali for Mithi (10 profiles), US/UK English for Kokoro (28 profiles), or English expressive speakers for Parler (34 names). These are synthetic model profiles, not a claim of 72 verified voice artists.
 
-Mithi/Kokoro emotion presets approximate delivery via rate and pitch. Parler receives a descriptive speaker/style prompt, with variable results. Its speed/pitch and intensity controls are qualitative prompt directions, not exact DSP settings. Optional local OmniVoice cloning uses its separate sidebar panel; see the README for setup and noncommercial model terms.
+Mithi/Kokoro delivery effects approximate emotion via rate and pitch; these engines cannot perform emotional acting. Parler/optional Indic Parler receive descriptive speaker/emotion prompts with variable results. Their numeric speed/pitch sliders use audio processing after generation; intensity remains a qualitative prompt direction. Pause durations remain unchanged. Optional local OmniVoice cloning uses its separate sidebar panel; see the README for setup and noncommercial model terms.
 
 ## Windows
 

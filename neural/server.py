@@ -81,6 +81,9 @@ def installed():
         "kokoro": (ROOT / ".models/kokoro/kokoro-v1_0.pth").exists(),
         "parler": (ROOT / ".models/parler/model.safetensors").exists()
         and PARLER_PYTHON.exists(),
+        "indic": (ROOT / ".models/indic/model.safetensors").exists()
+        and (ROOT / ".models/indic-description/spiece.model").exists()
+        and PARLER_PYTHON.exists(),
     }
 
 
@@ -157,7 +160,7 @@ def render(data):
         raise HTTPException(
             503, f"{engine} is not installed. Run the neural setup script."
         )
-    if engine == "parler":
+    if engine in {"parler", "indic"}:
         if len(data.text) > 600:
             raise HTTPException(
                 400, "Use at most 600 characters with expressive voices on CPU."
@@ -170,7 +173,9 @@ def render(data):
         )  # Validate tags before handing text to the isolated worker.
         result = subprocess.run(
             [str(PARLER_PYTHON), str(ROOT / "neural/parler_worker.py")],
-            input=data.model_dump_json().encode(),
+            input=json.dumps(
+                {**data.model_dump(), "engine": engine}, ensure_ascii=False
+            ).encode("utf-8"),
             capture_output=True,
             timeout=600,
             cwd=ROOT,

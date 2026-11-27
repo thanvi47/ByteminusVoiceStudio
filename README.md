@@ -36,6 +36,7 @@ After setup, `npm run dev` starts/reuses both services. First generation loads t
 - Generate voice + SRT and both download actions sit directly below the script. SRT uses estimated sentence timing.
 - Speaker play buttons use saved neutral MP3 samples, separate from script generation. Samples remain available after reload and without running the neural service.
 - 23 delivery presets including Funny, intensity, speed/pitch and freeform Parler voice direction.
+- Speaker ▶ buttons play fixed neutral samples. **Test current settings** generates the first sentence using the selected speaker, effect, speed and pitch. Generated recordings display their actual settings, and changing any setting marks the existing recording as outdated.
 - Voice library with search, language, gender and engine filters.
 - Optional private voice cloning in Bengali and English: MP3/WAV import, 3–10 second reference selection, saved voice profiles and audio/estimated SRT downloads.
 - Explicit PCM silence via `[pause 500ms]` and `[break 1.5s]`, at most 10 seconds per break.
@@ -64,6 +65,12 @@ Profiles and transcripts persist privately in ignored `.data/voices/`, outside `
 OmniVoice **code** is Apache-2.0, but its downloaded **model weights are CC-BY-NC**, and its bundled audio tokenizer has the Boson Higgs Audio 2 Community License. This optional engine is free for noncommercial use; its weights are not unrestricted open-source assets. The main Mithi/Kokoro/Parler engines remain Apache-2.0. Do not assume commercial rights for cloning; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Generic speaker previews are committed in `public/voice-previews/v1/` and play without inference. To rebuild them after installing all three base engines, run `npm run previews:build`. The resumable builder only uses fixed public sample sentences, never private scripts or clone references.
+
+## Bengali expressive speech (optional, model access required)
+
+Mithi/Kokoro delivery effects only change speed/pitch; they cannot perform laughter, sadness or whispering. For Bengali model-directed emotion, this app includes an optional Indic Parler adapter with recommended Arjun/Aditi profiles. Create a free Hugging Face account and accept the upstream gate at [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts). Then sign in locally with `.venv/Scripts/hf.exe auth login` and run `./scripts/setup-bengali-expressive.ps1`. Never paste your token into chat or commit it. Restart the studio and select **Bengali · Expressive**. No paid API or subscription is needed.
+
+The model and its separate mT5 description tokenizer are pinned. The adapter has protocol tests, but actual Bengali expressive inference cannot be verified until model access and download succeed. It remains disabled without its weights. Descriptive emotions are qualitative; exact acting is not guaranteed. English expressive Parler is already available with the existing setup. The optional Indic profiles have no committed saved samples yet.
 
 ## Tests and contributions
 

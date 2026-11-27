@@ -17,6 +17,8 @@ This project uses free and open source software. The npm lockfile records exact 
 | Mithi v2 Flash | Apache-2.0 | https://huggingface.co/Oomni/mithi-v2-flash |
 | Kokoro-82M v1 | Apache-2.0 | https://huggingface.co/hexgrad/Kokoro-82M |
 | Parler-TTS Mini v1 / inference | Apache-2.0 | https://github.com/huggingface/parler-tts |
+| Indic Parler-TTS (optional gated download) | Apache-2.0 | https://huggingface.co/ai4bharat/indic-parler-tts |
+| mT5 description tokenizer (optional) | Apache-2.0 | https://huggingface.co/google/mt5-base |
 | PyTorch | BSD-3-Clause | https://github.com/pytorch/pytorch |
 | Transformers | Apache-2.0 | https://github.com/huggingface/transformers |
 | FastAPI | MIT | https://github.com/fastapi/fastapi |

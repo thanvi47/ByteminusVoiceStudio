@@ -718,5 +718,25 @@
     "engine": "parler",
     "styleMode": "prompted",
     "neural": true
+  },
+  {
+    "id": "indic:Arjun",
+    "name": "Arjun · Bengali expressive",
+    "language": "bn-expressive",
+    "accent": "Bengali (model-directed)",
+    "gender": "Male",
+    "engine": "indic",
+    "styleMode": "prompted",
+    "neural": true
+  },
+  {
+    "id": "indic:Aditi",
+    "name": "Aditi · Bengali expressive",
+    "language": "bn-expressive",
+    "accent": "Bengali (model-directed)",
+    "gender": "Female",
+    "engine": "indic",
+    "styleMode": "prompted",
+    "neural": true
   }
 ]
