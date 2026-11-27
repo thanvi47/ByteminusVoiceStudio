@@ -38,6 +38,7 @@ import {
   type SynthesisInput,
 } from "@/lib/script";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
+import { voiceUpdateLabel } from "@/lib/voice-updates";
 import VoiceCloning from "./voice-cloning";
 import VoicePlayground from "./voice-playground";
 import AudioPlayer from "./audio-player";
@@ -880,6 +881,7 @@ export default function Studio() {
                             disabled={v.neural && !engines[v.engine]}
                           >
                             {v.name}
+                            {voiceUpdateLabel(v.id) ? ` · ${voiceUpdateLabel(v.id)}` : ""}
                             {` · ${v.delivery.label}`}
                             {v.gender === "Unspecified" ? "" : ` · ${v.gender}`}
                             {v.neural && !engines[v.engine]
@@ -894,6 +896,7 @@ export default function Studio() {
                       </span>
                       <div>
                         <strong>{choice.name}</strong>
+                        {voiceUpdateLabel(choice.id) && <span className="voice-update-badge">{voiceUpdateLabel(choice.id)}</span>}
                         <small>
                           {choice.neural
                             ? "Neural speaker"
@@ -1298,6 +1301,7 @@ export default function Studio() {
                       <Mic2 />
                     </span>
                     <h2>{v.name}</h2>
+                    {voiceUpdateLabel(v.id) && <span className="voice-update-badge">{voiceUpdateLabel(v.id)}</span>}
                     <p>
                       Suggested: {v.delivery.label} · {v.delivery.description}
                     </p>
@@ -1648,7 +1652,7 @@ function Dialogue({
           >
             {voices.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} · {v.delivery.label} · {v.gender}
+                {v.name}{voiceUpdateLabel(v.id) ? ` · ${voiceUpdateLabel(v.id)}` : ""} · {v.delivery.label} · {v.gender}
               </option>
             ))}
           </select>

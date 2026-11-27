@@ -34,6 +34,7 @@ import {
 } from "@/lib/director";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
 import AudioPlayer from "./audio-player";
+import { voiceUpdateLabel } from "@/lib/voice-updates";
 type Take = {
   id: string;
   input: SynthesisInput;
@@ -401,6 +402,7 @@ export default function VoicePlayground({
                     {v.name.slice(0, 1)}
                   </span>
                   <strong>{v.name.split(" · ")[0]}</strong>
+                  {voiceUpdateLabel(v.id) && <span className="voice-update-badge">{voiceUpdateLabel(v.id)}</span>}
                   <small>Suggested: {v.delivery.label}</small>
                 </button>
                 <button
@@ -440,11 +442,15 @@ export default function VoicePlayground({
             >
               {available.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name} · {v.delivery.label}
+                  {v.name}{voiceUpdateLabel(v.id) ? ` · ${voiceUpdateLabel(v.id)}` : ""} · {v.delivery.label}
                 </option>
               ))}
             </select>
           </label>
+          <p className="director-note">
+            ✓ TESTED = এই profile দিয়ে Excited ও Scared নমুনা তৈরি করে পরীক্ষা হয়েছে।
+            ★ UPDATED = একই emotion আপডেট পেয়েছে; আলাদা নমুনা পরীক্ষা হয়নি।
+          </p>
           <p className="director-note">
             <strong>Suggested delivery: {selected.delivery.label}</strong> ·{" "}
             {selected.delivery.description} These are editable suggestions, not

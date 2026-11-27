@@ -1533,6 +1533,21 @@ audio {
   border-radius: 8px;
   line-height: 1.6;
 }
+.voice-update-badge {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 6px;
+  margin: 4px 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--input);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: normal;
+}
 #clone-save-help {
   font-size: 14px;
   line-height: 1.7;
