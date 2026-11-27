@@ -1,5 +1,11 @@
 # Verification
 
+## Voice playground verification
+
+The playground update passes 61 TypeScript tests, including recipe validation, unknown/legacy voice rejection, instruction bounds and safe developer example serialization. Ten Python tests cover neural protocol controls, numeric pitch/speed and separate Indic tokenizers. Production build and typecheck pass.
+
+Connected Chrome checks confirmed that selecting a vibe preserves the script; presets save locally; Python developer examples use the local API; recipe JSON downloads with the selected voice and script; neutral samples play without inference; and two Kokoro takes (Heart/George) remain available after navigating away and returning. A 390px viewport was checked: the added navigation initially overflowed; after wrapping the mobile navigation, document and client widths both measured 375px. Two real expressive requests with the structured directions also succeeded: Lea/Happy produced 3.49 seconds in 76.44 seconds of CPU time, and Jon/Calm produced 3.82 seconds in 96.28 seconds. These checks prove output and routing, not subjective OpenAI-equivalent quality. JSON file import validation is covered by the test suite; automated browser file import remains limited by the Chrome extension's file-access permission.
+
 ## Neural upgrade verification
 
 The TypeScript suite includes neural catalog validation, PCM sample-rate handling, provider error propagation and a check that an offline neural service never returns legacy audio. These mocked protocol tests do not claim to generate neural audio. Python tests validate pause tags, input bounds, unknown voices and direct-browser/Host rejection:

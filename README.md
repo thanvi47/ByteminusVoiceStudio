@@ -42,6 +42,9 @@ After setup, `npm run dev` starts/reuses both services. First generation loads t
 - Explicit PCM silence via `[pause 500ms]` and `[break 1.5s]`, at most 10 seconds per break.
 - Estimated sentence-level SRT; dialogue beta with per-speaker assignment and separate line clips.
 - Production shared-password login, signed HttpOnly cookies, validation and bounded generation.
+- **Voice playground**: English/Bengali voice cards, neutral samples, random voice selection, 12 original vibes, six editable direction fields, example scripts, WAV/MP3 and estimated SRT, local saved presets, recipe JSON import/export, and Python/JavaScript/cURL examples for the local API. The latest two generated takes can be compared side by side. Vibe changes keep the user's script.
+
+The playground is inspired by the interaction concepts of [OpenAI.fm](https://openai.fm/); its implementation and preset text are original. It uses the existing local engines. OpenAI voices (including Marin/Cedar), model weights and hosted demo endpoints are not included. The GPT-4o mini TTS API requires paid usage; no OpenAI API key or paid service is added. Qualitative directions only apply to expressive local engines; choosing a vibe does not guarantee OpenAI-level acting. Samples are neutral, and generation finishes before playback rather than streaming. Share uses a recipe file so no hosted database is required. Recipes contain the script and direction; share only what you intend to disclose.
 
 ## Production and limitations
 

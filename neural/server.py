@@ -45,7 +45,7 @@ class Input(BaseModel):
     intensity: float = Field(default=50, ge=0, le=100)
     rate: float = Field(default=1, ge=0.5, le=2)
     pitch: float = Field(default=1, ge=0.5, le=1.5)
-    style: str = Field(default="", max_length=300)
+    style: str = Field(default="", max_length=1200)
     deliveryRate: float = Field(default=1, ge=0.7, le=1.3)
     deliveryPitch: float = Field(default=1, ge=0.7, le=1.3)
 

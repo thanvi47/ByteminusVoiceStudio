@@ -25,7 +25,7 @@ Synthesis JSON:
 {"text":"Hello [pause 500ms] world.","voice":"kokoro:af_heart","emotion":"Neutral","intensity":50,"rate":1,"pitch":1,"format":"wav","style":""}
 ```
 
-Text: 1–3,000 characters, with Parler additionally limited to 600; pauses: 0–10 seconds, at most 30; output: at most 90 seconds. Voice IDs are allowlisted by `/api/tts/voices` and `lib/voice-catalog.json`: e.g. `mithi:charvi`, `kokoro:af_heart`, `parler:Jon`. Legacy IDs remain explicit options. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. Mithi/Kokoro approximate delivery through pitch/rate. Parler interprets a descriptive direction; `style` adds up to 300 characters of voice direction and has an effect only for Parler. Exact prompt response is not guaranteed.
+Text: 1–3,000 characters, with Parler/Indic expressive voices limited to 600; pauses: 0–10 seconds, at most 30; output: at most 90 seconds. Voice IDs are allowlisted by `/api/tts/voices` and `lib/voice-catalog.json`: e.g. `mithi:charvi`, `kokoro:af_heart`, `parler:Jon`. Legacy IDs remain explicit options. Rate: 0.5–2; pitch: 0.5–1.5; intensity: 0–100. Mithi/Kokoro approximate delivery through pitch/rate. Parler/Indic interpret emotion and freeform direction; `style` accepts up to 1,200 characters. Their numeric speed/pitch sliders are applied to audio after generation. Exact prompt response is not guaranteed.
 
 The voices response includes `neural.engines`, reporting installed model files. Neural inference goes to a fixed loopback-only Python service; no client-provided provider URL, arbitrary subprocess command or paid service is accepted. Failures never fall back to robotic audio. Local CPU requests can take minutes; hosted serverless runtime compatibility is not promised.
 

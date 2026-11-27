@@ -39,6 +39,7 @@ import {
 } from "@/lib/script";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
 import VoiceCloning from "./voice-cloning";
+import VoicePlayground from "./voice-playground";
 type Clip = {
   id: string;
   name: string;
@@ -69,6 +70,7 @@ const sections = [
   "History",
   "Settings",
   "Voice cloning",
+  "Voice playground",
 ] as const;
 export default function Studio() {
   const [section, setSection] = useState<string>("Voice studio");
@@ -494,9 +496,15 @@ export default function Studio() {
         <div className="workspace-label">YOUR WORKSPACE</div>
         <nav>
           {sections.map((s, i) => {
-            const Icon = [Mic2, Library, FolderOpen, History, Settings2, Mic2][
-              i
-            ];
+            const Icon = [
+              Mic2,
+              Library,
+              FolderOpen,
+              History,
+              Settings2,
+              Mic2,
+              AudioLines,
+            ][i];
             return (
               <button
                 key={s}
@@ -550,8 +558,17 @@ export default function Studio() {
           </span>
           <div className="top-actions">
             <span className="engine-pill">
-              <span /> {choice.neural ? "Neural" : "Legacy"} · {choice.engine}{" "}
-              {choice.neural && !engines[choice.engine] ? "· unavailable" : ""}
+              <span />{" "}
+              {section === "Voice playground" ? (
+                "Local voice playground"
+              ) : (
+                <>
+                  {choice.neural ? "Neural" : "Legacy"} · {choice.engine}{" "}
+                  {choice.neural && !engines[choice.engine]
+                    ? "· unavailable"
+                    : ""}
+                </>
+              )}
             </span>
             <button
               className="icon-btn"
@@ -575,37 +592,39 @@ export default function Studio() {
           </div>
         </header>
         <main className="workspace">
-          <div className="page-heading">
-            <div className="eyebrow">
-              <span /> YOUR WORDS. A NEW VOICE.
+          {section !== "Voice playground" && (
+            <div className="page-heading">
+              <div className="eyebrow">
+                <span /> YOUR WORDS. A NEW VOICE.
+              </div>
+              <h1>
+                {section === "Voice studio"
+                  ? "Bring your words to life."
+                  : section === "Voice library"
+                    ? "Find your next voice."
+                    : section === "Projects"
+                      ? "Every story starts here."
+                      : section === "History"
+                        ? "Your recent creations."
+                        : section === "Voice cloning"
+                          ? "Your words. Your own voice."
+                          : "A studio on your terms."}
+              </h1>
+              <p>
+                {section === "Voice studio"
+                  ? "A little text. A little expression. Something worth listening to."
+                  : section === "Voice library"
+                    ? "Neural speaker profiles for Bangla and English. Preview to find your sound."
+                    : section === "Projects"
+                      ? "Saved scripts, ready for your next recording. Stored on this device."
+                      : section === "History"
+                        ? "Audio from this session. Download anything you want to keep."
+                        : section === "Voice cloning"
+                          ? "Save your reference recording, then create speech in Bengali or English."
+                          : "Free software, local speech, and complete control."}
+              </p>
             </div>
-            <h1>
-              {section === "Voice studio"
-                ? "Bring your words to life."
-                : section === "Voice library"
-                  ? "Find your next voice."
-                  : section === "Projects"
-                    ? "Every story starts here."
-                    : section === "History"
-                      ? "Your recent creations."
-                      : section === "Voice cloning"
-                        ? "Your words. Your own voice."
-                        : "A studio on your terms."}
-            </h1>
-            <p>
-              {section === "Voice studio"
-                ? "A little text. A little expression. Something worth listening to."
-                : section === "Voice library"
-                  ? "Neural speaker profiles for Bangla and English. Preview to find your sound."
-                  : section === "Projects"
-                    ? "Saved scripts, ready for your next recording. Stored on this device."
-                    : section === "History"
-                      ? "Audio from this session. Download anything you want to keep."
-                      : section === "Voice cloning"
-                        ? "Save your reference recording, then create speech in Bengali or English."
-                        : "Free software, local speech, and complete control."}
-            </p>
-          </div>
+          )}
           {error && (
             <div role="alert" className="banner error">
               {error}
@@ -620,6 +639,25 @@ export default function Studio() {
             </div>
           )}
           {section === "Voice cloning" && <VoiceCloning />}
+          <div hidden={section !== "Voice playground"}>
+            <VoicePlayground
+              engines={engines}
+              active={section === "Voice playground"}
+              onOpenStudio={(value) => {
+                setText(value.text);
+                setVoice(value.voice);
+                setLanguage(voices.find((v) => v.id === value.voice)!.language);
+                setEmotion(value.emotion);
+                setIntensity(value.intensity);
+                setRate(value.rate);
+                setPitch(value.pitch);
+                setFormat(value.format);
+                setStyle(value.style);
+                setGender("All");
+                setSection("Voice studio");
+              }}
+            />
+          </div>
           {section === "Voice studio" && (
             <>
               <div className="studio-grid">
@@ -912,10 +950,11 @@ export default function Studio() {
                     {choice.styleMode === "prompted" && (
                       <label className="style-label">
                         Voice direction
-                        <input
+                        <textarea
                           aria-label="Voice direction"
                           value={style}
-                          maxLength={300}
+                          rows={4}
+                          maxLength={1200}
                           onChange={(e) => setStyle(e.target.value)}
                           placeholder="Warm, expressive storyteller with a gentle delivery"
                         />

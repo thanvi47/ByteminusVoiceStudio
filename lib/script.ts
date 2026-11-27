@@ -100,10 +100,17 @@ export const inputSchema = z
     rate: z.number().min(0.5).max(2).default(1),
     pitch: z.number().min(0.5).max(1.5).default(1),
     format: z.enum(["wav", "mp3"]).default("wav"),
-    style: z.string().trim().max(300).default(""),
+    style: z.string().trim().max(1200).default(""),
   })
   .superRefine((data, ctx) => {
     const profile = voices.find((v) => v.id === data.voice);
+    if (profile?.styleMode === "prompted" && data.text.length > 600)
+      ctx.addIssue({
+        code: "custom",
+        path: ["text"],
+        message:
+          "Expressive voices support at most 600 characters per request on this CPU studio.",
+      });
     if (
       profile?.neural &&
       profile.language.startsWith("en") &&

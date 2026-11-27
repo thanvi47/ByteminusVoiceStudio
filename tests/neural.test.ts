@@ -76,7 +76,7 @@ describe("neural interoperability", () => {
       inputSchema.safeParse({
         text: "Hello",
         voice: "parler:Jon",
-        style: "x".repeat(301),
+        style: "x".repeat(1201),
       }).success,
     ).toBe(false));
 });
