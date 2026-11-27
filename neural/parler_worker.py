@@ -135,14 +135,23 @@ def load_model(engine="parler"):
         .to("cpu")
         .eval()
     )
-    tokenizer = AutoTokenizer.from_pretrained(folder, local_files_only=True)
+    # The released tokenizer.json already contains the complete Bengali tokenizer.
+    # Transformers 4.46 otherwise forces a redundant SentencePiece conversion when
+    # add_prefix_space is present, which fails on a JSON-only manual installation.
+    tokenizer = AutoTokenizer.from_pretrained(
+        folder, local_files_only=True, **({"add_prefix_space": None} if engine == "indic" else {})
+    )
     if engine == "indic":
         tokenizer = (
             tokenizer,
             AutoTokenizer.from_pretrained(
-                str(ROOT / ".models/indic-description"), local_files_only=True
+                str(ROOT / ".models/indic-description"),
+                local_files_only=True,
+                use_fast=False,
             ),
         )
+        if len(tokenizer[1]) > model.text_encoder.config.vocab_size:
+            raise ValueError("Indic description tokenizer does not match the model. Rerun setup-bengali-expressive.ps1.")
     return model, tokenizer
 
 

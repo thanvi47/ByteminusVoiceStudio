@@ -81,8 +81,11 @@ def installed():
         "kokoro": (ROOT / ".models/kokoro/kokoro-v1_0.pth").exists(),
         "parler": (ROOT / ".models/parler/model.safetensors").exists()
         and PARLER_PYTHON.exists(),
-        "indic": (ROOT / ".models/indic/model.safetensors").exists()
-        and (ROOT / ".models/indic-description/spiece.model").exists()
+        "indic": all((ROOT / file).is_file() for file in [
+            ".models/indic/model.safetensors", ".models/indic/config.json",
+            ".models/indic/tokenizer.json", ".models/indic/tokenizer_config.json",
+            ".models/indic-description/spiece.model", ".models/indic-description/config.json",
+        ])
         and PARLER_PYTHON.exists(),
     }
 

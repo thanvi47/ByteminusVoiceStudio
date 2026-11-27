@@ -22,8 +22,8 @@ MODELS = {
         ),
     ),
     "indic-description": (
-        "google/mt5-base",
-        "2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f",
+        "google/flan-t5-large",
+        "0613663d0d48ea86ba8cb3d7a44f0f65dc596a2a",
         lambda p: (
             p
             in {
@@ -31,6 +31,7 @@ MODELS = {
                 "tokenizer_config.json",
                 "special_tokens_map.json",
                 "spiece.model",
+                "tokenizer.json",
             }
         ),
     ),
@@ -81,6 +82,11 @@ def download(name):
     sha = metadata["sha"]
     folder = ROOT / ".models" / name
     folder.mkdir(parents=True, exist_ok=True)
+    source_file = folder / "source.json"
+    previous = json.loads(source_file.read_text(encoding="utf-8")) if source_file.exists() else None
+    replace_stale = previous is not None and (
+        previous.get("repository") != repo or previous.get("revision") != sha
+    )
     if name == "indic":
         from huggingface_hub import get_token
 
@@ -98,7 +104,7 @@ def download(name):
         if not target.resolve().is_relative_to(folder.resolve()):
             raise ValueError("Unsafe model path")
         target.parent.mkdir(parents=True, exist_ok=True)
-        if target.exists() and target.stat().st_size > 0:
+        if not replace_stale and target.exists() and target.stat().st_size > 0:
             return
         temporary = target.with_name(target.name + ".partial")
         print(f"Downloading {name}/{relative}", flush=True)
