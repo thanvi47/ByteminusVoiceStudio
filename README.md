@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml/badge.svg)](https://github.com/thanvi47/ByteminusVoiceStudio/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/thanvi47/ByteminusVoiceStudio?style=flat)](https://github.com/thanvi47/ByteminusVoiceStudio/stargazers)
+[![Forks](https://img.shields.io/github/forks/thanvi47/ByteminusVoiceStudio?style=flat)](https://github.com/thanvi47/ByteminusVoiceStudio/forks)
+[![Release asset downloads](https://img.shields.io/github/downloads/thanvi47/ByteminusVoiceStudio/total?label=release%20downloads)](https://github.com/thanvi47/ByteminusVoiceStudio/releases)
+[![Version](https://img.shields.io/github/package-json/v/thanvi47/ByteminusVoiceStudio)](https://github.com/thanvi47/ByteminusVoiceStudio/releases)
 
 **[বাংলায় সম্পূর্ণ installation guide](docs/INSTALL.bn.md)** · [Hardware and models](docs/NEURAL.md) · [Contributing](CONTRIBUTING.md) · [SEO/deployment](docs/SEO.md)
 
@@ -10,6 +14,10 @@
 Free, open source **local neural text-to-speech** for Bangla/Bengali and English. Next.js, TypeScript and Python inference with automatic CPU/NVIDIA CUDA selection. Generate WAV/MP3 voiceovers and estimated SRT subtitles; optional expressive models and private voice cloning. No paid speech APIs, subscriptions or cloud credits.
 
 বাংলা ও ইংরেজি neural voice তৈরি করুন নিজের কম্পিউটারে।
+
+**[Download a versioned source ZIP](https://github.com/thanvi47/ByteminusVoiceStudio/releases)** · [Repository clone/view statistics (owner access)](https://github.com/thanvi47/ByteminusVoiceStudio/graphs/traffic)
+
+The live badges show GitHub stars, forks, package version, CI and release-asset downloads. Download counts are download events, not unique people or successful installations; they exclude `git clone` and GitHub's automatically generated source archives. Clone/unique-cloner/view statistics are available separately in owner-only Insights → Traffic. There is no in-app telemetry, remote install identifier or active-user tracker. Badge values can be cached by Shields/GitHub.
 
 ## Voices and delivery
 

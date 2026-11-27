@@ -1,0 +1,39 @@
+name: Source release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate release version and tracked contents
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node -e 'const p=require("./package.json"); if(process.env.RELEASE_TAG!==`v${p.version}`) throw new Error("Tag must match package.json version")'
+          node -e 'const {execFileSync}=require("node:child_process"); const files=execFileSync("git",["ls-files","-z"],{encoding:"utf8"}).split("\0"); if(files.some(p=>/^(\.models\/|\.data\/|\.cache\/|\.venv\/|\.runtime\/)/.test(p)||(p.startsWith(".env")&&p!==".env.example"))) throw new Error("Private/runtime files must not be released")'
+      - run: npm ci --legacy-peer-deps
+      - run: npm test
+      - run: npm run build
+      - run: npm run typecheck
+      - name: Package tracked source only
+        run: |
+          git archive --format=zip --prefix=ByteminusVoiceStudio/ -o ByteminusVoiceStudio-source.zip HEAD
+          sha256sum ByteminusVoiceStudio-source.zip > SHA256SUMS.txt
+          node -e 'const f=require("node:fs"); f.writeFileSync("release-notes.md",f.readFileSync("docs/RELEASE_NOTES.md","utf8")+"\n## SHA256 checksum\n\n```text\n"+f.readFileSync("SHA256SUMS.txt","utf8")+"```\n")'
+      - name: Publish source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" ByteminusVoiceStudio-source.zip --verify-tag --title "ByteminusVoiceStudio $RELEASE_TAG" --notes-file release-notes.md
