@@ -13,7 +13,8 @@
     "dev:studio": "node scripts/dev-studio.mjs",
     "neural:serve": "node scripts/serve-neural.mjs",
     "dev:web": "next dev --hostname 127.0.0.1",
-    "start:studio": "node scripts/dev-studio.mjs --production"
+    "start:studio": "node scripts/dev-studio.mjs --production",
+    "previews:build": "node scripts/build-voice-previews.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

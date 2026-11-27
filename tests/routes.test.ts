@@ -10,6 +10,12 @@ vi.mock("next/headers", () => ({
 import { GET as session, POST as auth } from "../app/api/auth/[action]/route";
 import { GET, POST } from "../app/api/tts/[action]/route";
 import { GET as health } from "../app/api/health/route";
+import { GET as clones, POST as saveClone } from "../app/api/clones/route";
+import {
+  GET as reference,
+  DELETE as deleteClone,
+} from "../app/api/clones/[id]/route";
+import { POST as cloneGenerate } from "../app/api/clones/generate/route";
 import { voices } from "../lib/script";
 const ctx = (action: string) => ({ params: Promise.resolve({ action }) });
 const req = (path: string, body: unknown) =>
@@ -29,6 +35,32 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("API routes", () => {
+  it("protects private clone recordings and every cloning mutation", async () => {
+    const id = {
+      params: Promise.resolve({ id: "fd7a2d09-504d-4f09-b510-4f7c8d4c8fa0" }),
+    };
+    expect((await clones()).status).toBe(401);
+    expect((await reference(req("clones/id", {}), id)).status).toBe(401);
+    expect((await saveClone(req("clones", {}))).status).toBe(401);
+    expect((await deleteClone(req("clones/id", {}), id)).status).toBe(401);
+    expect((await cloneGenerate(req("clones/generate", {}))).status).toBe(401);
+  });
+  it("rejects foreign origins before touching private clone storage", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("APP_ACCESS_PASSWORD", "");
+    const foreign = () =>
+      new Request("http://localhost:3000/api/clones", {
+        method: "POST",
+        headers: { origin: "https://other.example" },
+        body: "{}",
+      });
+    expect((await saveClone(foreign())).status).toBe(403);
+    expect((await cloneGenerate(foreign())).status).toBe(403);
+    expect(
+      (await deleteClone(foreign(), { params: Promise.resolve({ id: "bad" }) }))
+        .status,
+    ).toBe(403);
+  });
   it("protects every TTS endpoint", async () => {
     expect((await GET(req("tts/voices", {}), ctx("voices"))).status).toBe(401);
     expect((await GET(req("tts/usage", {}), ctx("usage"))).status).toBe(401);

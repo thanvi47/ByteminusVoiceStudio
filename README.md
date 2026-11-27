@@ -33,8 +33,11 @@ After setup, `npm run dev` starts/reuses both services. First generation loads t
 
 - TXT import, language detection, character/word counts, pause tags, browser-local projects and session audio history.
 - WAV/MP3 export, actual waveform/duration, browser playback volume/speed.
-- 22 delivery presets, intensity, speed/pitch and freeform Parler voice direction.
+- Generate voice + SRT and both download actions sit directly below the script. SRT uses estimated sentence timing.
+- Speaker play buttons use saved neutral MP3 samples, separate from script generation. Samples remain available after reload and without running the neural service.
+- 23 delivery presets including Funny, intensity, speed/pitch and freeform Parler voice direction.
 - Voice library with search, language, gender and engine filters.
+- Optional private voice cloning in Bengali and English: MP3/WAV import, 3–10 second reference selection, saved voice profiles and audio/estimated SRT downloads.
 - Explicit PCM silence via `[pause 500ms]` and `[break 1.5s]`, at most 10 seconds per break.
 - Estimated sentence-level SRT; dialogue beta with per-speaker assignment and separate line clips.
 - Production shared-password login, signed HttpOnly cookies, validation and bounded generation.
@@ -50,7 +53,17 @@ npm run start:studio
 
 Use a trusted HTTPS reverse proxy for production secure cookies. Python must stay on loopback port 8123. Development without a password is allowed only outside production. See [deployment](docs/DEPLOYMENT.md).
 
-Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Scripts are limited to 3,000 characters, 30 breaks and 90 seconds output; Parler input is capped at 600 characters. No merged dialogue, voice cloning, exact word alignment or automatic long-script assembly. Projects live in the browser; download audio before reload. Voices may mispronounce names or omit words; review before publishing.
+Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Scripts are limited to 3,000 characters, 30 breaks and 90 seconds output; Parler and cloning input are capped at 600 characters. No merged dialogue, exact word alignment or automatic long-script assembly. Projects live in the browser; download generated audio before reload. Voices may mispronounce names or omit words; review before publishing.
+
+## Optional voice cloning
+
+Run `./scripts/setup-cloning.ps1`, then open **Voice cloning** in the sidebar. Upload your own/consented MP3 or WAV (up to 20 MB, 3–120 seconds). From a 30-second recording, choose a clean 3–10 second section and type its exact words. Listen to that section, save the profile, select Bengali or English and generate. For best pronunciation, use a reference in the output language; cross-language cloning may carry the reference accent. Similarity is not guaranteed.
+
+Profiles and transcripts persist privately in ignored `.data/voices/`, outside `public/`; delete them in the panel. They are shared by users of this single-owner studio password, not isolated accounts. Never deploy this as a multi-user service without separate storage and authorization. Generated audio is session-only. Upload decoding/resampling happens in the browser; only the selected mono WAV is sent to the local server. There is no automatic transcription or paid API. CPU inference may take several minutes.
+
+OmniVoice **code** is Apache-2.0, but its downloaded **model weights are CC-BY-NC**, and its bundled audio tokenizer has the Boson Higgs Audio 2 Community License. This optional engine is free for noncommercial use; its weights are not unrestricted open-source assets. The main Mithi/Kokoro/Parler engines remain Apache-2.0. Do not assume commercial rights for cloning; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Generic speaker previews are committed in `public/voice-previews/v1/` and play without inference. To rebuild them after installing all three base engines, run `npm run previews:build`. The resumable builder only uses fixed public sample sentences, never private scripts or clone references.
 
 ## Tests and contributions
 
@@ -74,4 +87,4 @@ docs/      Setup, capabilities and deployment
 
 ## License
 
-App: GPL-3.0-or-later. Selected neural weights/inference code: upstream Apache-2.0 releases; preserve their notices. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Model source revisions are fixed by the downloader. Some neural frontends use eSpeak for phoneme conversion; the audio decoder remains neural.
+App: GPL-3.0-or-later. Mithi/Kokoro/Parler: upstream Apache-2.0 releases. Optional cloning weights have separate noncommercial/community terms described above; preserve all upstream notices. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Model source revisions are fixed by the downloader. Some neural frontends use eSpeak for phoneme conversion; the audio decoder remains neural.

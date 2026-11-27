@@ -15,6 +15,7 @@ import {
   Mic2,
   Moon,
   Play,
+  Pause,
   Plus,
   Save,
   Settings2,
@@ -35,6 +36,8 @@ import {
   voices,
   type SynthesisInput,
 } from "@/lib/script";
+import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
+import VoiceCloning from "./voice-cloning";
 type Clip = {
   id: string;
   name: string;
@@ -45,6 +48,7 @@ type Clip = {
   peaks: number[];
   created: string;
   voice: string;
+  subtitles: string;
 };
 type Project = {
   id: string;
@@ -61,6 +65,7 @@ const sections = [
   "Projects",
   "History",
   "Settings",
+  "Voice cloning",
 ] as const;
 export default function Studio() {
   const [section, setSection] = useState<string>("Voice studio");
@@ -96,6 +101,9 @@ export default function Studio() {
   const [engineFilter, setEngineFilter] = useState("all");
   const [engines, setEngines] = useState<Record<string, boolean>>({});
   const [elapsed, setElapsed] = useState(0);
+  const [previewSamples, setPreviewSamples] = useState<PreviewSamples>({});
+  const [playingSample, setPlayingSample] = useState<string | null>(null);
+  const sampleAudio = useRef<HTMLAudioElement>(null);
   const audio = useRef<HTMLAudioElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const clipsRef = useRef<Clip[]>([]);
@@ -116,6 +124,17 @@ export default function Studio() {
     return () => {
       clipsRef.current.forEach((c) => URL.revokeObjectURL(c.url));
     };
+  }, []);
+  useEffect(() => {
+    fetch("/voice-previews/v1/manifest.json", { cache: "no-cache" })
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((data) =>
+        setPreviewSamples(previewManifestSchema.parse(data).samples),
+      )
+      .catch(() => {});
   }, []);
   useEffect(() => {
     clipsRef.current = clips;
@@ -249,6 +268,7 @@ export default function Studio() {
         peaks: JSON.parse(r.headers.get("X-Audio-Peaks") ?? "[]"),
         created: new Date().toISOString(),
         voice: requestedVoice,
+        subtitles: srt(source, Number(r.headers.get("X-Audio-Duration"))),
       };
       setClips((old) => [clip, ...old]);
       setActive(clip);
@@ -269,12 +289,111 @@ export default function Studio() {
     setText(text.slice(0, start) + " [pause 500ms] " + text.slice(end));
     el?.focus();
   }
+  function playSample(voiceId: string) {
+    const saved = previewSamples[voiceId],
+      player = sampleAudio.current;
+    if (!saved || !player) return;
+    if (playingSample === voiceId && !player.paused) {
+      player.pause();
+      setPlayingSample(null);
+      return;
+    }
+    audio.current?.pause();
+    player.pause();
+    player.src = saved.url;
+    setPlayingSample(voiceId);
+    void player.play().catch(() => {
+      setPlayingSample(null);
+      setError(
+        "Sample playback could not start. Click the play button to retry.",
+      );
+    });
+  }
+  function downloadSubtitles() {
+    if (active)
+      download(
+        new Blob([active.subtitles], {
+          type: "application/x-subrip;charset=utf-8",
+        }),
+        `byteminus-${active.id.slice(0, 8)}-estimated.srt`,
+      );
+  }
   function removeClip(id: string) {
     const clip = clips.find((c) => c.id === id);
     if (clip) URL.revokeObjectURL(clip.url);
     setClips((old) => old.filter((c) => c.id !== id));
     if (active?.id === id) setActive(undefined);
   }
+  const currentResult =
+    active?.text === text && active?.voice === voice ? active : undefined;
+  const generationControls = (
+    <div className="editor-actions">
+      <div className="generation-bar panel">
+        <div className="format-control">
+          <span>Export format</span>
+          <div className="segmented">
+            {(["wav", "mp3"] as const).map((f) => (
+              <button
+                key={f}
+                className={format === f ? "selected" : ""}
+                onClick={() => setFormat(f)}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <span className="format-info">
+            {format === "wav"
+              ? "Uncompressed · PCM audio"
+              : "96 kbps · Smaller file"}
+          </span>
+        </div>
+        <button
+          className="primary generate"
+          disabled={busy || !text.trim()}
+          onClick={() => generate()}
+        >
+          {busy ? (
+            <LoaderCircle className="spin" size={18} />
+          ) : (
+            <WandSparkles size={18} />
+          )}{" "}
+          {busy ? "Generating…" : "Generate voice + SRT"}
+          <span>{busy ? "" : `${text.length.toLocaleString()} chars`}</span>
+        </button>
+        <div className="quick-exports">
+          <button
+            disabled={!currentResult || busy}
+            onClick={() =>
+              currentResult &&
+              download(
+                currentResult.url,
+                `byteminus-${currentResult.id.slice(0, 8)}.${currentResult.format}`,
+              )
+            }
+          >
+            <Download size={16} /> Download voice
+          </button>
+          <button disabled={!currentResult || busy} onClick={downloadSubtitles}>
+            <FileText size={16} /> Download SRT
+          </button>
+          <span>
+            {currentResult
+              ? "Ready · SRT uses estimated sentence timing"
+              : "Generate first, then download your voice and SRT here."}
+          </span>
+        </div>
+      </div>
+      {busy && (
+        <div role="status" className="progress">
+          <span className="spin">
+            <LoaderCircle size={16} />
+          </span>
+          {progress} {elapsed}s
+        </div>
+      )}
+    </div>
+  );
   const choice = voices.find((v) => v.id === voice)!;
   if (auth === null)
     return (
@@ -319,6 +438,15 @@ export default function Studio() {
     );
   return (
     <div className="shell">
+      <audio
+        ref={sampleAudio}
+        preload="auto"
+        aria-hidden="true"
+        onEnded={() => setPlayingSample(null)}
+        onPause={() => {
+          if (sampleAudio.current?.paused) setPlayingSample(null);
+        }}
+      />
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="ByteminusVoiceStudio home">
           <span className="logo-icon">
@@ -331,7 +459,9 @@ export default function Studio() {
         <div className="workspace-label">YOUR WORKSPACE</div>
         <nav>
           {sections.map((s, i) => {
-            const Icon = [Mic2, Library, FolderOpen, History, Settings2][i];
+            const Icon = [Mic2, Library, FolderOpen, History, Settings2, Mic2][
+              i
+            ];
             return (
               <button
                 key={s}
@@ -423,7 +553,9 @@ export default function Studio() {
                     ? "Every story starts here."
                     : section === "History"
                       ? "Your recent creations."
-                      : "A studio on your terms."}
+                      : section === "Voice cloning"
+                        ? "Your words. Your own voice."
+                        : "A studio on your terms."}
             </h1>
             <p>
               {section === "Voice studio"
@@ -434,7 +566,9 @@ export default function Studio() {
                     ? "Saved scripts, ready for your next recording. Stored on this device."
                     : section === "History"
                       ? "Audio from this session. Download anything you want to keep."
-                      : "Free software, local speech, and complete control."}
+                      : section === "Voice cloning"
+                        ? "Save your reference recording, then create speech in Bengali or English."
+                        : "Free software, local speech, and complete control."}
             </p>
           </div>
           {error && (
@@ -450,110 +584,120 @@ export default function Studio() {
               {notice}
             </div>
           )}
+          {section === "Voice cloning" && <VoiceCloning />}
           {section === "Voice studio" && (
             <>
               <div className="studio-grid">
-                <section className="editor panel">
-                  <div className="panel-header">
-                    <div className="tab-group">
-                      <button
-                        className={!dialogue ? "tab selected" : "tab"}
-                        onClick={() => setDialogue(false)}
-                      >
-                        <FileText size={16} /> Text to speech
-                      </button>
-                      <button
-                        className={dialogue ? "tab selected" : "tab"}
-                        onClick={() => setDialogue(true)}
-                      >
-                        Dialogue <span className="subtle-tag">BETA</span>
-                      </button>
+                <div className="editor-column">
+                  <section className="editor panel">
+                    <div className="panel-header">
+                      <div className="tab-group">
+                        <button
+                          className={!dialogue ? "tab selected" : "tab"}
+                          onClick={() => setDialogue(false)}
+                        >
+                          <FileText size={16} /> Text to speech
+                        </button>
+                        <button
+                          className={dialogue ? "tab selected" : "tab"}
+                          onClick={() => setDialogue(true)}
+                        >
+                          Dialogue <span className="subtle-tag">BETA</span>
+                        </button>
+                      </div>
+                      <label className="import-button">
+                        <Upload size={15} /> Import TXT
+                        <input
+                          type="file"
+                          accept=".txt,text/plain"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 15000) {
+                                setError("Import a TXT file under 15 KB.");
+                                return;
+                              }
+                              const value = await file.text();
+                              if (value.length > 3000) {
+                                setError(
+                                  "Scripts can contain at most 3,000 characters.",
+                                );
+                                return;
+                              }
+                              setText(value);
+                            }
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
                     </div>
-                    <label className="import-button">
-                      <Upload size={15} /> Import TXT
-                      <input
-                        type="file"
-                        accept=".txt,text/plain"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 15000) {
-                              setError("Import a TXT file under 15 KB.");
-                              return;
-                            }
-                            const value = await file.text();
-                            if (value.length > 3000) {
-                              setError(
-                                "Scripts can contain at most 3,000 characters.",
-                              );
-                              return;
-                            }
-                            setText(value);
-                          }
-                          e.target.value = "";
+                    <div className="script-toolbar">
+                      <span>
+                        <span className="script-dot" />{" "}
+                        {dialogue ? "DIALOGUE SCRIPT" : "YOUR SCRIPT"}
+                      </span>
+                      <div>
+                        <button
+                          title="Insert 500ms pause"
+                          onClick={insertPause}
+                        >
+                          + Add pause
+                        </button>
+                        <button
+                          className="icon-btn"
+                          aria-label="Clear script"
+                          onClick={() => setText("")}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                    {dialogue && (
+                      <div className="inline-note">
+                        One speaker per line: <b>Speaker: text</b>. Speaker
+                        voices can be assigned below.
+                      </div>
+                    )}
+                    <textarea
+                      ref={input}
+                      className="script-input"
+                      aria-label="Script"
+                      value={text}
+                      maxLength={3000}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Write something worth listening to…"
+                    />
+                    <div className="editor-footer">
+                      <span>
+                        {text.length.toLocaleString()}{" "}
+                        <span className="muted">/ 3,000 characters</span>
+                        <span className="divider">·</span>
+                        {text.trim()
+                          ? text.trim().split(/\s+/u).length
+                          : 0}{" "}
+                        words
+                      </span>
+                      <button
+                        onClick={() => {
+                          changeLanguage(detectLanguage(text));
+                          setNotice("Language detected from script.");
                         }}
-                      />
-                    </label>
-                  </div>
-                  <div className="script-toolbar">
-                    <span>
-                      <span className="script-dot" />{" "}
-                      {dialogue ? "DIALOGUE SCRIPT" : "YOUR SCRIPT"}
-                    </span>
-                    <div>
-                      <button title="Insert 500ms pause" onClick={insertPause}>
-                        + Add pause
-                      </button>
-                      <button
-                        className="icon-btn"
-                        aria-label="Clear script"
-                        onClick={() => setText("")}
                       >
-                        <Trash2 size={15} />
+                        Detect language <Sparkles size={13} />
                       </button>
                     </div>
-                  </div>
-                  {dialogue && (
-                    <div className="inline-note">
-                      One speaker per line: <b>Speaker: text</b>. Speaker voices
-                      can be assigned below.
+                    <div className="editor-bottom">
+                      <span>
+                        <span className="key">✦</span> Tip: add{" "}
+                        <code>[pause 500ms]</code> to give your words room.
+                      </span>
+                      <button onClick={save}>
+                        <Save size={15} /> Save project
+                      </button>
                     </div>
-                  )}
-                  <textarea
-                    ref={input}
-                    className="script-input"
-                    aria-label="Script"
-                    value={text}
-                    maxLength={3000}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Write something worth listening to…"
-                  />
-                  <div className="editor-footer">
-                    <span>
-                      {text.length.toLocaleString()}{" "}
-                      <span className="muted">/ 3,000 characters</span>
-                      <span className="divider">·</span>
-                      {text.trim() ? text.trim().split(/\s+/u).length : 0} words
-                    </span>
-                    <button
-                      onClick={() => {
-                        changeLanguage(detectLanguage(text));
-                        setNotice("Language detected from script.");
-                      }}
-                    >
-                      Detect language <Sparkles size={13} />
-                    </button>
-                  </div>
-                  <div className="editor-bottom">
-                    <span>
-                      <span className="key">✦</span> Tip: add{" "}
-                      <code>[pause 500ms]</code> to give your words room.
-                    </span>
-                    <button onClick={save}>
-                      <Save size={15} /> Save project
-                    </button>
-                  </div>
-                </section>
+                  </section>
+                  {generationControls}
+                </div>
                 <section className="voice-panel panel">
                   <div className="panel-header">
                     <h2>
@@ -661,18 +805,27 @@ export default function Studio() {
                       <button
                         className="preview-btn"
                         aria-label="Preview voice"
-                        disabled={busy}
-                        onClick={() =>
-                          generate(
-                            language === "bn"
-                              ? "আপনার গল্প, আপনার কণ্ঠ।"
-                              : "Your story deserves to be heard.",
-                          )
+                        aria-pressed={playingSample === voice}
+                        title={
+                          previewSamples[voice]
+                            ? "Play saved neutral sample"
+                            : "Saved sample is not available yet"
                         }
+                        disabled={!previewSamples[voice]}
+                        onClick={() => playSample(voice)}
                       >
-                        <Play size={14} fill="currentColor" />
+                        {playingSample === voice ? (
+                          <Pause size={14} fill="currentColor" />
+                        ) : (
+                          <Play size={14} fill="currentColor" />
+                        )}
                       </button>
                     </div>
+                    <p className="sample-note">
+                      {previewSamples[voice]
+                        ? `Saved neutral sample · ${previewSamples[voice].duration.toFixed(1)}s · click to listen`
+                        : "Saved sample is being prepared."}
+                    </p>
                     <div className="line" />
                     <label className="label-row">
                       <span>Emotion & delivery</span>
@@ -779,50 +932,6 @@ export default function Studio() {
                   defaultVoice={voice}
                 />
               )}
-              <div className="generation-bar panel">
-                <div className="format-control">
-                  <span>Export format</span>
-                  <div className="segmented">
-                    {(["wav", "mp3"] as const).map((f) => (
-                      <button
-                        key={f}
-                        className={format === f ? "selected" : ""}
-                        onClick={() => setFormat(f)}
-                      >
-                        {f.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                  <span className="format-info">
-                    {format === "wav"
-                      ? "Uncompressed · PCM audio"
-                      : "96 kbps · Smaller file"}
-                  </span>
-                </div>
-                <button
-                  className="primary generate"
-                  disabled={busy || !text.trim()}
-                  onClick={() => generate()}
-                >
-                  {busy ? (
-                    <LoaderCircle className="spin" size={18} />
-                  ) : (
-                    <WandSparkles size={18} />
-                  )}{" "}
-                  {busy ? "Generating…" : "Generate speech"}
-                  <span>
-                    {busy ? "" : `${text.length.toLocaleString()} chars`}
-                  </span>
-                </button>
-              </div>
-              {busy && (
-                <div role="status" className="progress">
-                  <span className="spin">
-                    <LoaderCircle size={16} />
-                  </span>
-                  {progress} {elapsed}s
-                </div>
-              )}
               <section className="audio-panel panel">
                 <div className="panel-header">
                   <h2>
@@ -853,6 +962,10 @@ export default function Studio() {
                       controls
                       src={active.url}
                       preload="metadata"
+                      onPlay={() => {
+                        sampleAudio.current?.pause();
+                        setPlayingSample(null);
+                      }}
                     />
                     <div className="player-actions">
                       <label>
@@ -882,16 +995,7 @@ export default function Studio() {
                         <Download size={15} /> Download{" "}
                         {active.format.toUpperCase()}
                       </button>
-                      <button
-                        onClick={() =>
-                          download(
-                            new Blob([srt(active.text, active.duration)], {
-                              type: "text/plain;charset=utf-8",
-                            }),
-                            "byteminus-estimated.srt",
-                          )
-                        }
-                      >
+                      <button onClick={downloadSubtitles}>
                         Export SRT <span className="subtle-tag">ESTIMATED</span>
                       </button>
                       <button
@@ -1009,23 +1113,38 @@ export default function Studio() {
                           ? "Model files installed"
                           : "Setup required"}
                     </p>
-                    <button
-                      disabled={busy || (v.neural && !engines[v.engine])}
-                      onClick={() => {
-                        setLanguage(v.language);
-                        setGender("All");
-                        setVoice(v.id as SynthesisInput["voice"]);
-                        setSection("Voice studio");
-                        generate(
-                          v.language === "bn"
-                            ? "শুনুন আপনার নতুন কণ্ঠ।"
-                            : "Listen to your next voice.",
-                          v.id,
-                        );
-                      }}
-                    >
-                      <Play size={15} /> Preview & use voice
-                    </button>
+                    <div className="voice-card-actions">
+                      <button
+                        disabled={!previewSamples[v.id]}
+                        aria-pressed={playingSample === v.id}
+                        onClick={() => playSample(v.id)}
+                      >
+                        {playingSample === v.id ? (
+                          <Pause size={15} />
+                        ) : (
+                          <Play size={15} />
+                        )}{" "}
+                        {playingSample === v.id
+                          ? "Pause sample"
+                          : "Listen to sample"}
+                      </button>
+                      <button
+                        disabled={busy}
+                        onClick={() => {
+                          setLanguage(v.language);
+                          setGender("All");
+                          setVoice(v.id as SynthesisInput["voice"]);
+                          setSection("Voice studio");
+                        }}
+                      >
+                        Use voice
+                      </button>
+                    </div>
+                    <p>
+                      {previewSamples[v.id]
+                        ? `Saved neutral sample · ${previewSamples[v.id].duration.toFixed(1)} seconds`
+                        : "No saved sample yet"}
+                    </p>
                   </article>
                 ))}
               </div>

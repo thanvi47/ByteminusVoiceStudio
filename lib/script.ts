@@ -13,6 +13,7 @@ export type VoiceProfile = {
 export const emotions = [
   "Neutral",
   "Happy",
+  "Funny",
   "Sad",
   "Excited",
   "Angry",
@@ -159,6 +160,7 @@ export function delivery(emotion: string, intensity: number) {
   const presets: Record<(typeof emotions)[number], [number, number]> = {
     Neutral: [0, 0],
     Happy: [0.15, 0.1],
+    Funny: [0.12, 0.14],
     Sad: [-0.2, -0.12],
     Excited: [0.25, 0.14],
     Angry: [0.12, -0.05],

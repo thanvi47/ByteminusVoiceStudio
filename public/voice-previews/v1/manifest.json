@@ -1,0 +1,366 @@
+{
+  "version": 1,
+  "mode": "neutral",
+  "samples": {
+    "mithi:satvik": {
+      "url": "/voice-previews/v1/mithi-satvik.d02f3eae0aea.mp3",
+      "duration": 3.25,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:charvi": {
+      "url": "/voice-previews/v1/mithi-charvi.2f30de923d11.mp3",
+      "duration": 3.375,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:ahana": {
+      "url": "/voice-previews/v1/mithi-ahana.d5b713d7f2ad.mp3",
+      "duration": 3.3,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:vaidehi": {
+      "url": "/voice-previews/v1/mithi-vaidehi.45e818abc5b1.mp3",
+      "duration": 3.2,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:malini": {
+      "url": "/voice-previews/v1/mithi-malini.e89d587ca078.mp3",
+      "duration": 3.275,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:jahnavi": {
+      "url": "/voice-previews/v1/mithi-jahnavi.18f8d715330a.mp3",
+      "duration": 3.175,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:anirban": {
+      "url": "/voice-previews/v1/mithi-anirban.29cc7527d4c3.mp3",
+      "duration": 3.175,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:nakul": {
+      "url": "/voice-previews/v1/mithi-nakul.a5031ae1cfb2.mp3",
+      "duration": 3.225,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:vasant": {
+      "url": "/voice-previews/v1/mithi-vasant.c556052ae897.mp3",
+      "duration": 3.175,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "mithi:siddhant": {
+      "url": "/voice-previews/v1/mithi-siddhant.70409d5ac329.mp3",
+      "duration": 3.05,
+      "text": "হ্যালো! চলুন, আপনার গল্পকে কণ্ঠ দিই।"
+    },
+    "kokoro:af_heart": {
+      "url": "/voice-previews/v1/kokoro-af_heart.6fa938c368fa.mp3",
+      "duration": 2.575,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_alloy": {
+      "url": "/voice-previews/v1/kokoro-af_alloy.35ba698f40a1.mp3",
+      "duration": 2.925,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_aoede": {
+      "url": "/voice-previews/v1/kokoro-af_aoede.e9939ced3667.mp3",
+      "duration": 2.475,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_bella": {
+      "url": "/voice-previews/v1/kokoro-af_bella.a6367bc4cac3.mp3",
+      "duration": 2.925,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_jessica": {
+      "url": "/voice-previews/v1/kokoro-af_jessica.90937435a69c.mp3",
+      "duration": 2.525,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_kore": {
+      "url": "/voice-previews/v1/kokoro-af_kore.7d6d5b0a20c6.mp3",
+      "duration": 2.425,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_nicole": {
+      "url": "/voice-previews/v1/kokoro-af_nicole.d9f2e27ac6b1.mp3",
+      "duration": 3.35,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_nova": {
+      "url": "/voice-previews/v1/kokoro-af_nova.fbe3250f7849.mp3",
+      "duration": 2.85,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_river": {
+      "url": "/voice-previews/v1/kokoro-af_river.b83507c972be.mp3",
+      "duration": 2.6,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_sarah": {
+      "url": "/voice-previews/v1/kokoro-af_sarah.78adefe1321a.mp3",
+      "duration": 2.925,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:af_sky": {
+      "url": "/voice-previews/v1/kokoro-af_sky.469f1b063b5e.mp3",
+      "duration": 2.825,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_adam": {
+      "url": "/voice-previews/v1/kokoro-am_adam.76f5630473f6.mp3",
+      "duration": 2.7,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_echo": {
+      "url": "/voice-previews/v1/kokoro-am_echo.72ae2aff4ad0.mp3",
+      "duration": 2.8,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_eric": {
+      "url": "/voice-previews/v1/kokoro-am_eric.f8fb7b40eb81.mp3",
+      "duration": 2.575,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_fenrir": {
+      "url": "/voice-previews/v1/kokoro-am_fenrir.e18cb8f6502c.mp3",
+      "duration": 2.35,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_liam": {
+      "url": "/voice-previews/v1/kokoro-am_liam.3d41c79543df.mp3",
+      "duration": 2.55,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_michael": {
+      "url": "/voice-previews/v1/kokoro-am_michael.3389a829aaba.mp3",
+      "duration": 2.85,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_onyx": {
+      "url": "/voice-previews/v1/kokoro-am_onyx.bc3174f7436e.mp3",
+      "duration": 2.85,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_puck": {
+      "url": "/voice-previews/v1/kokoro-am_puck.75a2243562f4.mp3",
+      "duration": 2.325,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:am_santa": {
+      "url": "/voice-previews/v1/kokoro-am_santa.0cb9f4e38ce1.mp3",
+      "duration": 2.625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bf_alice": {
+      "url": "/voice-previews/v1/kokoro-bf_alice.7cc9e651562e.mp3",
+      "duration": 2.8,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bf_emma": {
+      "url": "/voice-previews/v1/kokoro-bf_emma.79c5862e714a.mp3",
+      "duration": 2.875,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bf_isabella": {
+      "url": "/voice-previews/v1/kokoro-bf_isabella.a20009e8bdf7.mp3",
+      "duration": 2.975,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bf_lily": {
+      "url": "/voice-previews/v1/kokoro-bf_lily.b481b8fb5a41.mp3",
+      "duration": 2.8,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bm_daniel": {
+      "url": "/voice-previews/v1/kokoro-bm_daniel.e5b52d36adfa.mp3",
+      "duration": 2.8,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bm_fable": {
+      "url": "/voice-previews/v1/kokoro-bm_fable.1c658ae7a109.mp3",
+      "duration": 3,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bm_george": {
+      "url": "/voice-previews/v1/kokoro-bm_george.009ee877c13e.mp3",
+      "duration": 3.075,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "kokoro:bm_lewis": {
+      "url": "/voice-previews/v1/kokoro-bm_lewis.60fda7acfbc7.mp3",
+      "duration": 3.1,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Laura": {
+      "url": "/voice-previews/v1/parler-Laura.038b1fd2f2c4.mp3",
+      "duration": 2.298791666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Gary": {
+      "url": "/voice-previews/v1/parler-Gary.b141edfa8b1c.mp3",
+      "duration": 2.507791666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Jon": {
+      "url": "/voice-previews/v1/parler-Jon.422b4b56a9ab.mp3",
+      "duration": 2.1130416666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Lea": {
+      "url": "/voice-previews/v1/parler-Lea.38a6e3f75fcd.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Karen": {
+      "url": "/voice-previews/v1/parler-Karen.def550c01f3e.mp3",
+      "duration": 2.1130416666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Rick": {
+      "url": "/voice-previews/v1/parler-Rick.2e16d00c4226.mp3",
+      "duration": 2.252375,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Brenda": {
+      "url": "/voice-previews/v1/parler-Brenda.89128ad8aca2.mp3",
+      "duration": 2.8792916666666666,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Eileen": {
+      "url": "/voice-previews/v1/parler-Eileen.e3b506359f95.mp3",
+      "duration": 2.298791666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Jordan": {
+      "url": "/voice-previews/v1/parler-Jordan.82d435636d6b.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Mike": {
+      "url": "/voice-previews/v1/parler-Mike.e92130ab60e5.mp3",
+      "duration": 2.61225,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:David": {
+      "url": "/voice-previews/v1/parler-David.164a58ed0106.mp3",
+      "duration": 2.948958333333333,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Yann": {
+      "url": "/voice-previews/v1/parler-Yann.7480395070f5.mp3",
+      "duration": 2.542625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Joy": {
+      "url": "/voice-previews/v1/parler-Joy.4116f231c6f3.mp3",
+      "duration": 2.61225,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:James": {
+      "url": "/voice-previews/v1/parler-James.16b0921adf4c.mp3",
+      "duration": 2.1130416666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Eric": {
+      "url": "/voice-previews/v1/parler-Eric.51f7cf9630e7.mp3",
+      "duration": 3.0766666666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Lauren": {
+      "url": "/voice-previews/v1/parler-Lauren.004014332285.mp3",
+      "duration": 2.61225,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Rose": {
+      "url": "/voice-previews/v1/parler-Rose.4a656ed9b79e.mp3",
+      "duration": 2.5774166666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Will": {
+      "url": "/voice-previews/v1/parler-Will.44708b8a57e1.mp3",
+      "duration": 2.507791666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Jason": {
+      "url": "/voice-previews/v1/parler-Jason.9889689a7730.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Aaron": {
+      "url": "/voice-previews/v1/parler-Aaron.e169f7323a60.mp3",
+      "duration": 2.61225,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Naomie": {
+      "url": "/voice-previews/v1/parler-Naomie.33559d609b79.mp3",
+      "duration": 2.484541666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Alisa": {
+      "url": "/voice-previews/v1/parler-Alisa.da7741ee7b7a.mp3",
+      "duration": 2.8792916666666666,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Patrick": {
+      "url": "/voice-previews/v1/parler-Patrick.6902f8f801bb.mp3",
+      "duration": 2.2059166666666665,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Jerry": {
+      "url": "/voice-previews/v1/parler-Jerry.7602a3762e16.mp3",
+      "duration": 2.972166666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Tina": {
+      "url": "/voice-previews/v1/parler-Tina.e614159a7398.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Jenna": {
+      "url": "/voice-previews/v1/parler-Jenna.1b2bd42747ba.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Bill": {
+      "url": "/voice-previews/v1/parler-Bill.b8afe3cf719e.mp3",
+      "duration": 9.647916666666667,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Tom": {
+      "url": "/voice-previews/v1/parler-Tom.0f419de8c1a4.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Carol": {
+      "url": "/voice-previews/v1/parler-Carol.375bb6c0f137.mp3",
+      "duration": 2.6703333333333332,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Barbara": {
+      "url": "/voice-previews/v1/parler-Barbara.a5889da9740e.mp3",
+      "duration": 2.6355,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Rebecca": {
+      "url": "/voice-previews/v1/parler-Rebecca.d6cd73bb694a.mp3",
+      "duration": 2.2639583333333335,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Anna": {
+      "url": "/voice-previews/v1/parler-Anna.e8e5d3bdbab9.mp3",
+      "duration": 2.82125,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Bruce": {
+      "url": "/voice-previews/v1/parler-Bruce.0a4a93a07f76.mp3",
+      "duration": 2.333625,
+      "text": "Hello! Let's bring your story to life."
+    },
+    "parler:Emily": {
+      "url": "/voice-previews/v1/parler-Emily.c05de435d939.mp3",
+      "duration": 2.5658333333333334,
+      "text": "Hello! Let's bring your story to life."
+    }
+  }
+}

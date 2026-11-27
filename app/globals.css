@@ -864,6 +864,68 @@ audio {
   color: var(--purple);
   margin-top: 15px;
 }
+.editor-column {
+  min-width: 0;
+}
+.editor-actions .generation-bar {
+  margin-top: 16px;
+  flex-wrap: wrap;
+  border-color: #4b3b69;
+}
+.editor-actions .generate {
+  font-size: 14px;
+  min-height: 44px;
+}
+.quick-exports {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-basis: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.quick-exports button {
+  font-size: 14px;
+  min-height: 40px;
+}
+.quick-exports span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.sample-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 10px 0 0;
+  line-height: 1.7;
+}
+.voice-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.voice-card-actions button {
+  width: auto;
+  min-height: 40px;
+  font-size: 13px;
+}
+.preview-btn[aria-pressed="true"] {
+  background: var(--purple-solid);
+  color: white;
+}
+.voice-card-actions button[aria-pressed="true"] {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+@media (max-width: 760px) {
+  .quick-exports button {
+    flex: 1;
+  }
+  .quick-exports span {
+    flex-basis: 100%;
+  }
+}
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -1455,3 +1517,18 @@ audio {
   font-size: 14px;
   line-height: 1.7;
 }
+.clone-layout {display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.clone-layout > .error {grid-column:1/-1}
+.clone-panel {padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.clone-panel h2 {display:flex;gap:10px;align-items:center;margin:0;font-size:20px}
+.clone-panel p {font-size:14px;line-height:1.6;color:var(--muted);margin:0}
+.clone-panel label {display:flex;flex-direction:column;gap:8px;font-size:14px}
+.clone-panel input:not([type=checkbox]),.clone-panel select,.clone-panel textarea {width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:12px;font:inherit;box-sizing:border-box}
+.clone-panel textarea {resize:vertical;line-height:1.6}
+.clone-panel audio {width:100%;min-width:0}
+.clone-panel .clone-consent {flex-direction:row;align-items:flex-start;line-height:1.5}
+.clone-times {display:flex;gap:12px;flex-wrap:wrap}
+.clone-times > * {flex:1;min-width:120px}
+.clone-saved {display:flex;align-items:center;gap:10px}
+.clone-output {display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--border);padding-top:20px}
+@media(max-width:1000px){.clone-layout{grid-template-columns:1fr}}

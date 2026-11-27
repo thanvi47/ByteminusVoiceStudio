@@ -1,0 +1,6 @@
+# Core inference only; no hosted APIs, Gradio UI or automatic ASR downloads.
+# Install omnivoice==0.2.1 separately with --no-deps to omit its Gradio extras.
+accelerate==1.16.0
+pydub==0.25.1
+tensorboardX==2.6.5
+webdataset==1.0.2

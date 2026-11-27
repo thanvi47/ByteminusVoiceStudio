@@ -20,5 +20,10 @@ This project uses free and open source software. The npm lockfile records exact 
 | PyTorch | BSD-3-Clause | https://github.com/pytorch/pytorch |
 | Transformers | Apache-2.0 | https://github.com/huggingface/transformers |
 | FastAPI | MIT | https://github.com/fastapi/fastapi |
+| OmniVoice inference code (optional) | Apache-2.0 | https://github.com/k2-fsa/OmniVoice |
+| OmniVoice pretrained weights (optional, downloaded separately) | CC-BY-NC per upstream model card | https://huggingface.co/k2-fsa/OmniVoice |
+| Bundled Higgs Audio v2 tokenizer (optional, downloaded separately) | Boson Higgs Audio 2 Community License | https://huggingface.co/k2-fsa/OmniVoice/blob/main/audio_tokenizer/LICENSE |
+
+The cloning engine's weight licenses differ from its code license. Free noncommercial use does not imply unrestricted commercial rights or an OSI-approved weight license. The app does not redistribute these weights. Its generic committed voice previews use Mithi/Kokoro/Parler only. Private clone recordings and generated cloning test audio must never be committed.
 
 Upstream copyright and full licenses are included in installed packages and downloaded model folders. Python transitive dependencies retain their licenses; inspect installed metadata and checked-in locks. Preserve upstream notices and corresponding-source obligations when redistributing software or engine binaries. Neural weights are downloaded separately and not committed. Mithi includes Kokoro and Maya text-normalization code; retain the credits in its README and LICENSE.

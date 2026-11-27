@@ -4,6 +4,34 @@ from neural.server import app, script_parts
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_clone_stdin_preserves_bengali_on_windows(self):
+        import json
+        from neural.clone_worker import decode_request
+
+        text = "আজ একটি নতুন দিন।"
+        self.assertEqual(
+            decode_request(
+                json.dumps({"text": text}, ensure_ascii=False).encode("utf-8")
+            )["text"],
+            text,
+        )
+
+    def test_funny_style_direction(self):
+        from neural.parler_worker import description
+
+        text = description(
+            {
+                "voice": "parler:Jon",
+                "emotion": "Funny",
+                "intensity": 80,
+                "rate": 1,
+                "pitch": 1,
+                "style": "",
+            }
+        )
+        self.assertIn("playful", text)
+        self.assertIn("comic delivery", text)
+
     def setUp(self):
         self.client = TestClient(app)
 

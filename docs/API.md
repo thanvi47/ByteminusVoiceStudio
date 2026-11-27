@@ -11,6 +11,13 @@ Errors use `{ "error": { "message": "..." } }`. Auth/session and usage responses
 | GET | /api/tts/voices | Protected voice catalog and actual capabilities |
 | GET | /api/tts/usage | Protected process counters; no invented provider quota |
 | POST | /api/tts/generate | Protected synthesis; binary WAV or MP3 |
+| GET | /api/clones | Protected local clone profiles and installation state |
+| POST | /api/clones | Save `{name,transcript,consent:true,audio}`; audio is base64 mono PCM16 24 kHz WAV, 3–10 seconds |
+| GET | /api/clones/[id] | Protected private reference WAV; no-store |
+| DELETE | /api/clones/[id] | Delete one UUID profile and its recording |
+| POST | /api/clones/generate | `{id,text,language:"bn" or "en",format:"wav" or "mp3",rate:1}`; local cloned speech |
+
+Cloning accepts at most 600 script characters and 90 seconds output. Reference uploads are capped at 700 KB JSON and reject silence, malformed WAV headers and out-of-range durations. At most 20 profiles persist in ignored `.data/voices/`. Mutation requests require the existing authentication/origin checks. This is a single-owner studio: authenticated users share these profiles. Clone generation uses a fixed local worker with a 15-minute timeout; it does not silently substitute another voice. Responses include `X-Audio-Duration`; the browser builds estimated SRT from the submitted script snapshot. Optional OmniVoice weights have noncommercial terms; see README.
 
 Synthesis JSON:
 

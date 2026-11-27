@@ -11,7 +11,6 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-data = json.load(sys.stdin)
 
 
 def parts(text):
@@ -56,6 +55,7 @@ def description(data):
     styles = {
         "Neutral": "natural, conversational and clear",
         "Happy": "cheerful and happy",
+        "Funny": "playful, amused and witty, with a light comic delivery",
         "Sad": "sad and subdued",
         "Excited": "excited, lively and animated",
         "Angry": "angry and stern",
@@ -86,10 +86,8 @@ def description(data):
     return f"{speaker} speaks in a {emphasis} {styles.get(emotion, 'natural')} tone, with a {pace} speaking rate and {pitch} pitch. Very clear audio, close recording, no background noise. {data.get('style', '')}"
 
 
-with contextlib.redirect_stdout(sys.stderr):
-    import numpy as np
+def load_model():
     import torch
-    from scipy.signal import resample_poly
     from parler_tts import ParlerTTSForConditionalGeneration
     from transformers import AutoTokenizer
 
@@ -104,6 +102,14 @@ with contextlib.redirect_stdout(sys.stderr):
         .eval()
     )
     tokenizer = AutoTokenizer.from_pretrained(folder, local_files_only=True)
+    return model, tokenizer
+
+
+def synthesize(data, model, tokenizer):
+    import numpy as np
+    import torch
+    from scipy.signal import resample_poly
+
     inputs = tokenizer(description(data), return_tensors="pt")
     chunks = []
     length = 0
@@ -139,5 +145,12 @@ with contextlib.redirect_stdout(sys.stderr):
         chunks.append(audio)
     if not length:
         raise ValueError("No audio generated")
-    output = (np.clip(np.concatenate(chunks), -1, 1) * 32767).astype("<i2").tobytes()
-sys.stdout.buffer.write(output)
+    return (np.clip(np.concatenate(chunks), -1, 1) * 32767).astype("<i2").tobytes()
+
+
+if __name__ == "__main__":
+    data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+    with contextlib.redirect_stdout(sys.stderr):
+        model, tokenizer = load_model()
+        output = synthesize(data, model, tokenizer)
+    sys.stdout.buffer.write(output)

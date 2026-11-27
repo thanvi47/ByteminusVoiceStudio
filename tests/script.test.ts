@@ -53,6 +53,8 @@ describe("scripts", () => {
       expect(inputSchema.safeParse(data).success).toBe(false);
   });
   it("maps approximated delivery with intensity", () => {
+    expect(inputSchema.safeParse({text:'A funny story.',voice:'parler:Jon',emotion:'Funny'}).success).toBe(true);
+    expect(delivery('Funny',100).pitch).toBeGreaterThan(1);
     expect(delivery("Happy", 0)).toEqual({ rate: 1, pitch: 1 });
     expect(delivery("Happy", 100).rate).toBeGreaterThan(1);
     expect(delivery("Calm", 100).rate).toBeLessThan(1);

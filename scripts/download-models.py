@@ -8,6 +8,14 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {
+    "omnivoice": (
+        "k2-fsa/OmniVoice",
+        "3fc979d1cd72492cd679c5ac2611e0d7ac047ba1",
+        lambda p: (
+            p.endswith((".json", ".safetensors", ".jinja"))
+            or p.endswith(("LICENSE", "README.md"))
+        ),
+    ),
     "mithi": (
         "Oomni/mithi-v2-flash",
         "1fc0dd68496a2483508ec764d310146c41ff90be",
