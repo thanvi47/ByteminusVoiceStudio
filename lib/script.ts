@@ -90,7 +90,11 @@ export const voices: VoiceProfile[] = [
     styleMode: "approximate",
     neural: false,
   })),
-].map((v) => ({ ...v, delivery: voiceDelivery(v.id) }));
+].map((v) => ({
+  ...v,
+  styleMode: v.neural && ["mithi", "kokoro"].includes(v.engine) ? "natural" : v.styleMode,
+  delivery: voiceDelivery(v.id),
+}));
 export const inputSchema = z
   .object({
     text: z.string().trim().min(1).max(3000),
@@ -126,6 +130,13 @@ export const inputSchema = z
         message:
           "Your script contains Bengali text. Select a Bengali voice or use an English script.",
       });
+  })
+  .transform((data) => {
+    const profile = voices.find((v) => v.id === data.voice);
+    // Old saved projects may still contain emotion settings for natural-only voices.
+    return profile?.neural && profile.styleMode !== "prompted"
+      ? { ...data, emotion: "Neutral" as const, intensity: 0 }
+      : data;
   });
 export type SynthesisInput = z.infer<typeof inputSchema>;
 export function synthesisKey(input: SynthesisInput) {

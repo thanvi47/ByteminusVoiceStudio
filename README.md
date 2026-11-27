@@ -8,8 +8,8 @@ Free, open source **local neural text-to-speech** for Bangla and English. Next.j
 
 | Engine | Profiles | Language | Controls |
 | --- | --- | --- | --- |
-| Mithi v2 Flash | 10 | Bengali | Neural speech; emotion approximated with pitch/rate |
-| Kokoro v1 | 28 | US/UK English | Neural speech; emotion approximated with pitch/rate |
+| Mithi v2 Flash | 10 | Bengali | Natural neural speech; emotion effects disabled |
+| Kokoro v1 | 28 | US/UK English | Natural neural speech; emotion effects disabled |
 | Parler-TTS Mini v1 | 34 named speakers | English, speaker-dependent accent | Prompted delivery and optional voice direction; results vary |
 | eSpeak NG | 6 legacy configurations | Bengali/English | Robotic engine, only by explicit selection |
 
@@ -38,7 +38,7 @@ After setup, `npm run dev` starts/reuses both services. First generation loads t
 - 23 delivery presets including Funny, intensity, speed/pitch and freeform Parler voice direction.
 - Speaker ▶ buttons play fixed neutral samples. **Test current settings** generates the first sentence using the selected speaker, effect, speed and pitch. Generated recordings display their actual settings, and changing any setting marks the existing recording as outdated.
 - Voice library with search, language, gender and engine filters.
-- Every voice picker includes a suggested delivery and short usage note (for example Jon · Excited, Emily/Emma · Calm). Optional automatic delivery selection applies the suggested preset when choosing a voice; all directions remain editable. These are app-curated suggestions, not verified traits or fixed emotions of real voice artists. Natural engines still approximate delivery through speed/pitch.
+- Every voice picker includes a suggested delivery and short usage note (for example Jon · Excited, Emily/Emma · Calm). Optional automatic delivery selection applies the suggested preset when choosing a voice. These are app-curated suggestions, not verified traits or fixed emotions of real voice artists. Mithi/Kokoro emotion effects are disabled: automatic pitch shifting and time stretching caused unnatural, metallic speech. Only expressive engines use emotion prompts. Manual speed/pitch remain available; keep both at 1.00 for unprocessed speech.
 - Quiet generated speech is automatically raised in level by default, with smooth peak limiting. **Output volume (0–300%)** is baked into the next WAV/MP3 export, including cloned speech. **Playback volume (0–300%)** changes the current player immediately and does not alter the download. Above 100%, supported browsers use Web Audio gain/compression. Automatic loudness can be disabled; it uses speech RMS, not calibrated LUFS. High boosts may sound compressed. Saved neutral previews are level-corrected too.
 - Optional private voice cloning in Bengali and English: MP3/WAV import, 3–10 second reference selection, saved voice profiles and audio/estimated SRT downloads.
 - Explicit PCM silence via `[pause 500ms]` and `[break 1.5s]`, at most 10 seconds per break.

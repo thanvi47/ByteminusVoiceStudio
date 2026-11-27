@@ -969,7 +969,7 @@ export default function Studio() {
                       <span>
                         {choice.styleMode === "prompted"
                           ? "Emotion & delivery"
-                          : "Delivery effect · speed/pitch only"}
+                          : choice.neural ? "Natural delivery · emotion unavailable" : "Delivery effect · speed/pitch only"}
                       </span>
                       <span className="subtle-tag">
                         {choice.styleMode === "prompted"
@@ -979,7 +979,8 @@ export default function Studio() {
                     </label>
                     <select
                       aria-label="Emotion"
-                      value={emotion}
+                      value={choice.neural && choice.styleMode !== "prompted" ? "Neutral" : emotion}
+                      disabled={choice.neural && choice.styleMode !== "prompted"}
                       onChange={(e) =>
                         setEmotion(e.target.value as SynthesisInput["emotion"])
                       }
@@ -1008,6 +1009,7 @@ export default function Studio() {
                         min="0"
                         max="100"
                         value={intensity}
+                        disabled={choice.neural && choice.styleMode !== "prompted"}
                         onChange={(e) => setIntensity(+e.target.value)}
                       />
                     </label>
@@ -1076,7 +1078,7 @@ export default function Studio() {
                       {choice.styleMode === "prompted"
                         ? "Emotion and intensity guide the expressive model; exact acting varies. Speed and pitch sliders are applied to the generated speech. CPU generation is slower; use short sentences."
                         : choice.neural
-                          ? "This engine cannot act emotions. These effects only adjust speed and pitch; Funny, Sad and Whisper do not create laughter, sadness or real whispering. Use Test current settings to generate a new test."
+                          ? "Emotion is unavailable on this natural engine. Automatic pitch/speed effects are disabled to preserve voice quality. For natural sound keep manual speed and pitch at 1.00. Choose an expressive engine for emotion."
                           : "Legacy robotic speech. Choose a neural voice for more natural audio."}
                       {choice.language === "bn"
                         ? " Bengali regional accent is not verified."
@@ -1302,7 +1304,7 @@ export default function Studio() {
                       {v.styleMode === "prompted"
                         ? "Prompted expressive delivery"
                         : v.neural
-                          ? "Neural · approximated emotion"
+                          ? "Neural · natural delivery"
                           : "Legacy robotic engine"}
                     </p>
                     <p>
@@ -1577,8 +1579,8 @@ export default function Studio() {
             <p>3. Set delivery, choose WAV or MP3, and generate.</p>
             <p>
               Use <code>[pause 500ms]</code> or <code>[break 1.5s]</code> for
-              silence up to 10 seconds. Mithi and Kokoro approximate emotion
-              with prosody. Parler uses prompted style with variable results.
+              silence up to 10 seconds. Mithi and Kokoro use natural delivery;
+              emotion effects are disabled. Parler uses prompted style with variable results.
             </p>
             <p>
               Save projects locally. Download audio to keep it. SRT timing is

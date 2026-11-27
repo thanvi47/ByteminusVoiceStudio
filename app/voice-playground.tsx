@@ -507,8 +507,8 @@ export default function VoicePlayground({
           </div>
           {selected.styleMode !== "prompted" ? (
             <p className="director-warning">
-              This natural engine supports speed and pitch only. Choose an
-              expressive engine to use voice direction and vibes.
+              এই ইঞ্জিনে emotion বন্ধ রাখা হয়েছে, যাতে কৃত্রিম pitch/speed effect-এ শব্দ বিকৃত না হয়।
+              Natural voice only. Choose an expressive engine for vibes and emotion.
             </p>
           ) : (
             <p className="director-note">
@@ -594,7 +594,8 @@ export default function VoicePlayground({
             <label>
               Emotion / delivery
               <select
-                value={input.emotion}
+                value={selected.styleMode === "prompted" ? input.emotion : "Neutral"}
+                disabled={selected.styleMode !== "prompted"}
                 onChange={(e) => {
                   patch({
                     emotion: e.target.value as SynthesisInput["emotion"],
@@ -618,6 +619,7 @@ export default function VoicePlayground({
                 min="0"
                 max="100"
                 value={input.intensity}
+                disabled={selected.styleMode !== "prompted"}
                 onChange={(e) => patch({ intensity: +e.target.value })}
               />
             </label>

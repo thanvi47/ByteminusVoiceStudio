@@ -195,16 +195,16 @@ def render(data):
         elif not part.strip():
             continue
         elif engine == "mithi":
-            # Native F0 control is a prosody approximation, not emotional acting.
+            # Apply only explicit manual pitch. Emotion presets must not add DSP artifacts.
             original = model.settings["pitch_shift"]
             model.settings["pitch_shift"] = original + 12 * math.log2(
-                data.pitch * data.deliveryPitch
+                data.pitch
             )
             try:
                 audio = model.synthesize(part, lang="bn", voice=speaker)
             finally:
                 model.settings["pitch_shift"] = original
-            speed = data.rate * data.deliveryRate
+            speed = data.rate
             if abs(speed - 1) > 0.01:
                 import librosa
 
@@ -216,7 +216,7 @@ def render(data):
                 model[speaker[0]](
                     part,
                     voice=str(ROOT / ".models/kokoro/voices" / f"{speaker}.pt"),
-                    speed=data.rate * data.deliveryRate,
+                    speed=data.rate,
                 )
             )
             audio = (
@@ -224,7 +224,7 @@ def render(data):
                 if chunks_out
                 else np.array([], dtype=np.float32)
             )
-            shift = 12 * math.log2(data.pitch * data.deliveryPitch)
+            shift = 12 * math.log2(data.pitch)
             if abs(shift) > 0.05:
                 import librosa
 

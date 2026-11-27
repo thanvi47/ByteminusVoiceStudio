@@ -74,11 +74,8 @@ export function encode(
   return Buffer.concat(chunks);
 }
 async function neuralSynthesize(input: SynthesisInput) {
-  const profile = voices.find((v) => v.id === input.voice)!;
-  const d =
-    profile.styleMode === "prompted"
-      ? { rate: 1, pitch: 1 }
-      : delivery(input.emotion, input.intensity);
+  // Neural emotion comes from a model prompt, never a synthetic pitch/speed effect.
+  // Natural engines ignore emotion; explicit manual sliders remain available.
   let response: Response;
   try {
     response = await fetch("http://127.0.0.1:8123/synthesize", {
@@ -92,8 +89,8 @@ async function neuralSynthesize(input: SynthesisInput) {
         rate: input.rate,
         pitch: input.pitch,
         style: input.style,
-        deliveryRate: d.rate,
-        deliveryPitch: d.pitch,
+        deliveryRate: 1,
+        deliveryPitch: 1,
       }),
       signal: AbortSignal.timeout(650000),
     });
@@ -153,13 +150,13 @@ export const provider: TTSProvider = {
       {
         id: "mithi",
         neural: true,
-        styleMode: "approximate",
+        styleMode: "natural",
         languages: ["bn"],
       },
       {
         id: "kokoro",
         neural: true,
-        styleMode: "approximate",
+        styleMode: "natural",
         languages: ["en-US", "en-GB"],
       },
       { id: "parler", neural: true, styleMode: "prompted", languages: ["en"] },

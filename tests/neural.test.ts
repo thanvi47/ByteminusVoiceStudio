@@ -3,6 +3,20 @@ import { encode, provider, neuralStatus } from "../lib/tts";
 import { voices, inputSchema } from "../lib/script";
 afterEach(() => vi.unstubAllGlobals());
 describe("neural interoperability", () => {
+  it.each(["mithi:charvi", "kokoro:af_heart"])("never turns emotion into pitch or time-stretch effects for %s", async (voice) => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(new Uint8Array(4800), {
+      headers: { "X-Sample-Rate": "24000" },
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+    await provider.synthesize(inputSchema.parse({ text: "Hello.", voice, emotion: "Funny", intensity: 100, rate: 1, pitch: 1 }));
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent.deliveryPitch).toBe(1);
+    expect(sent.deliveryRate).toBe(1);
+    expect(sent.pitch).toBe(1);
+    expect(sent.rate).toBe(1);
+    expect(sent.emotion).toBe("Neutral");
+    expect(sent.intensity).toBe(0);
+  });
   it("rejects Bengali scripts for English-only neural voices", () => {
     expect(
       inputSchema.safeParse({

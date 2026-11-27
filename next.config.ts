@@ -5,6 +5,13 @@ const config: NextConfig = {
     "@breezystack/lamejs",
   ],
   poweredByHeader: false,
+  // Local inference assets stay on disk; never bundle private recordings or multi-GB weights.
+  outputFileTracingExcludes: {
+    "/*": [
+      "./.models/**/*", "./.data/**/*", "./.cache/**/*",
+      "./.venv/**/*", "./.runtime/**/*", "./.tools/**/*",
+    ],
+  },
   async headers() {
     return [
       {
