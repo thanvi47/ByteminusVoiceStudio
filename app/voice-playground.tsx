@@ -507,7 +507,7 @@ export default function VoicePlayground({
             <p className="director-warning">
               This engine is unavailable.{" "}
               {group === "indic"
-                ? "Free Hugging Face model access and Bengali expressive setup are required."
+                ? "Base setup does not install Indic. Accept free access at huggingface.co/ai4bharat/indic-parler-tts, log in with .venv/Scripts/hf.exe auth login, then run ./scripts/setup-bengali-expressive.ps1 and restart. Ordinary Bengali voices use Mithi."
                 : "Start the local neural service after setup."}
             </p>
           )}

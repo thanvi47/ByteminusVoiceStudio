@@ -30,3 +30,4 @@ if ($Expressive) {
     if ($LASTEXITCODE -ne 0) { throw 'Expressive model download failed.' }
 }
 Write-Host 'Neural setup complete. Run npm run dev to open the studio.'
+Write-Host 'Bengali emotional voices (Indic) require a separate model: approve access at https://huggingface.co/ai4bharat/indic-parler-tts, then run .venv/Scripts/hf.exe auth login and ./scripts/setup-bengali-expressive.ps1.'

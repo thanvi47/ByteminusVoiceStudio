@@ -25,6 +25,15 @@ npm ci --legacy-peer-deps
 npm run dev
 ```
 
+**Bengali expressive voices (Arjun/Aditi) are a separate installation.** The commands above install ordinary Bengali Mithi voices and English expressive Parler, not the gated Indic model. On each new computer, sign into Hugging Face and accept the model's access conditions at [AI4Bharat Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts). Then, from the project folder:
+
+```powershell
+./.venv/Scripts/hf.exe auth login
+./scripts/setup-bengali-expressive.ps1
+```
+
+Wait for the model and description tokenizer download to finish successfully, then stop the running studio terminals with Ctrl+C and run `npm run dev` again. Select Bengali · Expressive. For ordinary Bengali speech without this extra setup, select Bengali and a Mithi voice. Model files and login tokens are not included in the Git repository.
+
 Open http://127.0.0.1:3000. Keep the terminal running. Setup installs isolated Python 3.12 environments and selects official CPU or CUDA 12.8 PyTorch wheels using NVIDIA driver detection. Override with `-Device cpu` or `-Device cuda`. A compatible NVIDIA driver is required for CUDA; no driver or paid service is installed. Omit `-Expressive` for just Mithi/Kokoro. Model weights, caches, environments and generated samples are ignored by Git.
 
 After setup, `npm run dev` starts/reuses both services. Hardware is selected independently in the main and expressive environments. The editor supports 3,000 characters on CPU, 6,000 on usable CUDA GPUs below 16 GB VRAM, and 12,000 on larger CUDA GPUs. Long neural scripts render sequentially in hardware-sized batches and join into one recording and estimated SRT. First generation loads the chosen model; CPU Parler can take many minutes per section. See [NEURAL.md](docs/NEURAL.md).

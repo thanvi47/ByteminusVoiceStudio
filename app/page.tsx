@@ -1226,8 +1226,10 @@ export default function Studio() {
                     )}
                     {choice.neural && !engines[choice.engine] && (
                       <p className="capability-note error">
-                        {choice.engine} is unavailable. Run{" "}
-                        <code>npm run dev:studio</code> after neural setup.
+                        {choice.engine === "indic" ? <>
+                          Bengali expressive requires a separate Indic model download. Base setup does not install it. Accept access on{" "}
+                          <a href="https://huggingface.co/ai4bharat/indic-parler-tts" target="_blank" rel="noreferrer">Hugging Face</a>, log in using <code>.venv/Scripts/hf.exe auth login</code>, then run <code>./scripts/setup-bengali-expressive.ps1</code>. Restart the studio after setup. For ordinary Bengali speech, select Bengali · Mithi.
+                        </> : <>{choice.engine} is unavailable. Run <code>npm run dev:studio</code> after neural setup.</>}
                       </p>
                     )}
                   </div>
