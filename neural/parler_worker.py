@@ -11,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from neural.cpu_runtime import configure_cpu
+from neural.hardware import runtime_profile
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -137,16 +137,16 @@ def load_model(engine="parler"):
     from parler_tts import ParlerTTSForConditionalGeneration
     from transformers import AutoTokenizer
 
-    threads = configure_cpu(torch)
+    hardware = runtime_profile(torch)
     if engine not in {"parler", "indic"}:
         raise ValueError("Unknown expressive engine")
     folder = str(ROOT / ".models" / engine)
-    print(f"Loading expressive model on CPU with {threads} compute threads...", flush=True)
+    print(f"Loading expressive model on {hardware['device']} ({hardware['name']}), {hardware['cpuThreads']} CPU threads...", flush=True)
     model = (
         ParlerTTSForConditionalGeneration.from_pretrained(
             folder, local_files_only=True, attn_implementation="eager"
         )
-        .to("cpu")
+        .to(hardware["device"])
         .eval()
     )
     # The released tokenizer.json already contains the complete Bengali tokenizer.
@@ -177,6 +177,7 @@ def synthesize(data, model, tokenizer):
     prompt_tokenizer, description_tokenizer = (
         tokenizer if isinstance(tokenizer, tuple) else (tokenizer, tokenizer)
     )
+    device = next(model.parameters()).device if hasattr(model, "parameters") else "cpu"
     inputs = description_tokenizer(description(data), return_tensors="pt")
     chunks = []
     length = 0
@@ -190,10 +191,10 @@ def synthesize(data, model, tokenizer):
             prompt = prompt_tokenizer(part, return_tensors="pt")
             with torch.inference_mode():
                 generation = model.generate(
-                    input_ids=inputs.input_ids,
-                    attention_mask=inputs.attention_mask,
-                    prompt_input_ids=prompt.input_ids,
-                    prompt_attention_mask=prompt.attention_mask,
+                    input_ids=inputs.input_ids.to(device),
+                    attention_mask=inputs.attention_mask.to(device),
+                    prompt_input_ids=prompt.input_ids.to(device),
+                    prompt_attention_mask=prompt.attention_mask.to(device),
                     max_new_tokens=1800,
                 )
             audio = generation.cpu().numpy().squeeze()
@@ -208,8 +209,8 @@ def synthesize(data, model, tokenizer):
             audio = apply_controls(audio, data["rate"], data["pitch"])
         audio = np.asarray(audio, dtype=np.float32).reshape(-1)
         length += len(audio)
-        if length > 90 * 24000:
-            raise ValueError("Audio exceeds 90 seconds")
+        if length > 600 * 24000:
+            raise ValueError("Audio exceeds 10 minutes; generate shorter sections")
         chunks.append(audio)
     if not length:
         raise ValueError("No audio generated")

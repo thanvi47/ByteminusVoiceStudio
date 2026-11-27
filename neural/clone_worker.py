@@ -8,6 +8,9 @@ import sys
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from neural.hardware import runtime_profile
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -23,7 +26,7 @@ def render(data):
     import torch
     from omnivoice import OmniVoice
 
-    torch.set_num_threads(min(4, os.cpu_count() or 1))
+    hardware = runtime_profile(torch)
     folder = ROOT / ".data/voices" / str(uuid.UUID(data["id"]))
     profile = json.loads((folder / "profile.json").read_text(encoding="utf-8"))
     reference, sr = sf.read(folder / "reference.wav", dtype="float32")
@@ -34,7 +37,7 @@ def render(data):
     # No ASR download: the user supplies the exact selected reference transcript.
     model = OmniVoice.from_pretrained(
         str(ROOT / ".models/omnivoice"),
-        device_map="cpu",
+        device_map=hardware["device"],
         dtype=torch.float32,
         local_files_only=True,
         load_asr=False,

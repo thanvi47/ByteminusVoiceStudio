@@ -75,7 +75,7 @@ describe("voice playground recipes and requests", () => {
   });
   it("rejects an oversized expressive script before generation", () =>
     expect(
-      inputSchema.safeParse({ ...input, text: "a".repeat(601) }).success,
+      inputSchema.safeParse({ ...input, text: "a".repeat(12001) }).success,
     ).toBe(false));
   it("exports JavaScript user text as data, not executable template interpolation", () => {
     const snippet = developerSnippet(input, "JavaScript");

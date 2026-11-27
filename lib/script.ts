@@ -97,7 +97,7 @@ export const voices: VoiceProfile[] = [
 }));
 export const inputSchema = z
   .object({
-    text: z.string().trim().min(1).max(3000),
+    text: z.string().trim().min(1).max(12000),
     voice: z
       .string()
       .refine((id) => voices.some((v) => v.id === id), "Unknown voice"),
@@ -112,13 +112,8 @@ export const inputSchema = z
   })
   .superRefine((data, ctx) => {
     const profile = voices.find((v) => v.id === data.voice);
-    if (profile?.styleMode === "prompted" && data.text.length > 600)
-      ctx.addIssue({
-        code: "custom",
-        path: ["text"],
-        message:
-          "Expressive voices support at most 600 characters per request on this CPU studio.",
-      });
+    if (!profile?.neural && data.text.length > 3000)
+      ctx.addIssue({ code: "custom", path: ["text"], message: "Legacy voices support at most 3,000 characters." });
     if (
       profile?.neural &&
       profile.language.startsWith("en") &&

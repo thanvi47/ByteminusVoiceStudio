@@ -110,6 +110,9 @@ export default function Studio() {
   const [showLegacy, setShowLegacy] = useState(false);
   const [engineFilter, setEngineFilter] = useState("all");
   const [engines, setEngines] = useState<Record<string, boolean>>({});
+  const [playgroundEngine, setPlaygroundEngine] = useState("parler");
+  const [hardware, setHardware] = useState<{ device: string; name: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string } | null>(null);
+  const [engineHardware, setEngineHardware] = useState<Record<string, { device: string; name: string; cpuThreads: number; maxScriptCharacters?: number; reason?: string }>>({});
   const [elapsed, setElapsed] = useState(0);
   const [previewSamples, setPreviewSamples] = useState<PreviewSamples>({});
   const [playingSample, setPlayingSample] = useState<string | null>(null);
@@ -156,7 +159,7 @@ export default function Studio() {
     if (!auth) return;
     fetch("/api/tts/voices")
       .then((r) => r.json())
-      .then((d) => setEngines(d.neural?.engines ?? {}))
+      .then((d) => { setEngines(d.neural?.engines ?? {}); setHardware(d.neural?.hardware ?? null); setEngineHardware(d.neural?.engineHardware ?? {}); })
       .catch(() => {});
     fetch("/api/tts/usage")
       .then((r) => r.json())
@@ -271,8 +274,8 @@ export default function Studio() {
     };
     setProgress(
       voices.find((v) => v.id === requestedVoice)?.styleMode === "prompted"
-        ? "Loading expressive voice and generating on CPU. This can take several minutes…"
-        : "Generating neural speech on your CPU. First use loads the model…",
+        ? "Generating expressive voice in automatic sections. Long scripts can take many minutes…"
+        : "Generating neural speech on the detected hardware. First use loads the model…",
     );
     try {
       const r = await fetch("/api/tts/generate", {
@@ -371,6 +374,9 @@ export default function Studio() {
     outputGain,
     normalizeAudio,
   };
+  const choice = voices.find((v) => v.id === voice)!;
+  const activeHardware = engineHardware[section === "Voice playground" ? playgroundEngine : choice.engine] ?? hardware;
+  const scriptLimit = choice.neural ? activeHardware?.maxScriptCharacters ?? 3000 : 3000;
   const currentResult =
     active &&
     !active.settingsTest &&
@@ -401,7 +407,7 @@ export default function Studio() {
         </div>
         <button
           className="primary generate"
-          disabled={busy || !text.trim()}
+          disabled={busy || !text.trim() || text.length > scriptLimit}
           onClick={() => generate()}
         >
           {busy ? (
@@ -448,7 +454,7 @@ export default function Studio() {
             <LoaderCircle size={16} />
           </span>
           {progress} {elapsed}s
-          {elapsed >= 240 && <span> · CPU-তে কাজ চলছে। দীর্ঘ expressive script-এ ৫–১০ মিনিট বা বেশি লাগতে পারে; আবার Generate চাপবেন না।</span>}
+          {elapsed >= 240 && <span> · দীর্ঘ script অংশে অংশে তৈরি হচ্ছে; CPU-তে অনেক সময় লাগতে পারে। আবার Generate চাপবেন না।</span>}
         </div>
       )}
     </div>
@@ -560,7 +566,6 @@ export default function Studio() {
       )}
     </section>
   );
-  const choice = voices.find((v) => v.id === voice)!;
   if (auth === null)
     return (
       <main className="login">
@@ -686,6 +691,7 @@ export default function Studio() {
             Workspace <span>/</span> <b>{section}</b>
           </span>
           <div className="top-actions">
+            {activeHardware && <span className="engine-pill" title={activeHardware.reason || activeHardware.name}>{activeHardware.device === "cuda" ? activeHardware.name : activeHardware.device === "unavailable" ? "Runtime unavailable" : `CPU · ${activeHardware.cpuThreads} threads`} · Auto</span>}
             <span className="engine-pill">
               <span />{" "}
               {section === "Voice playground" ? (
@@ -771,6 +777,9 @@ export default function Studio() {
           <div hidden={section !== "Voice playground"}>
             <VoicePlayground
               engines={engines}
+              onRuntimeChange={setPlaygroundEngine}
+              scriptLimit={activeHardware?.maxScriptCharacters ?? 3000}
+              runtimeLimits={Object.fromEntries(Object.entries(engineHardware).map(([key, value]) => [key, value.maxScriptCharacters ?? 3000]))}
               active={section === "Voice playground"}
               onOpenStudio={(value) => {
                 setText(value.text);
@@ -822,9 +831,9 @@ export default function Studio() {
                                 return;
                               }
                               const value = await file.text();
-                              if (value.length > 3000) {
+                              if (value.length > scriptLimit) {
                                 setError(
-                                  "Scripts can contain at most 3,000 characters.",
+                                  `This runtime supports up to ${scriptLimit.toLocaleString()} script characters.`,
                                 );
                                 return;
                               }
@@ -867,14 +876,14 @@ export default function Studio() {
                       className="script-input"
                       aria-label="Script"
                       value={text}
-                      maxLength={3000}
+                      maxLength={scriptLimit}
                       onChange={(e) => setText(e.target.value)}
                       placeholder="Write something worth listening to…"
                     />
                     <div className="editor-footer">
                       <span>
                         {text.length.toLocaleString()}{" "}
-                        <span className="muted">/ 3,000 characters</span>
+                        <span className="muted">/ {scriptLimit.toLocaleString()} characters · auto sections</span>
                         <span className="divider">·</span>
                         {text.trim()
                           ? text.trim().split(/\s+/u).length
@@ -1585,7 +1594,7 @@ export default function Studio() {
               <AudioLines />
             </span>
             <h2 id="help-title">Your voice, your tools.</h2>
-            <p>1. Write or import up to 3,000 characters.</p>
+            <p>1. Write or import a script within the hardware limit shown in the editor.</p>
             <p>
               2. Select Bengali, English US/UK, or English expressive speakers.
               Choose a neural voice.

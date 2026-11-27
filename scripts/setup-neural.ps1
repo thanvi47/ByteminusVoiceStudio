@@ -1,8 +1,10 @@
-param([switch]$Expressive)
+param([switch]$Expressive, [ValidateSet('auto','cpu','cuda')][string]$Device='auto')
 $ErrorActionPreference = 'Stop'
 $rootPath = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $rootPath
 $env:UV_CACHE_DIR = Join-Path $rootPath '.cache/uv'
+. "$PSScriptRoot/torch-backend.ps1"
+$torchIndex = Get-TorchIndex $Device
 $uvPath = Join-Path $rootPath '.tools/uv/uv.exe'
 if (!(Test-Path -LiteralPath $uvPath)) {
     New-Item -ItemType Directory -Force '.tools' | Out-Null
@@ -16,13 +18,13 @@ function Invoke-Uv {
 Invoke-Uv python install 3.12 --install-dir '.runtime/python'
 $pythonPath = Join-Path $rootPath '.runtime/python/cpython-3.12-windows-x86_64-none/python.exe'
 if (!(Test-Path '.venv')) { Invoke-Uv venv .venv --python $pythonPath }
-Invoke-Uv pip install --python '.venv/Scripts/python.exe' 'torch==2.8.0' --index-url 'https://download.pytorch.org/whl/cpu'
+Invoke-Uv pip install --python '.venv/Scripts/python.exe' 'torch==2.8.0' --index-url $torchIndex
 Invoke-Uv pip install --python '.venv/Scripts/python.exe' -r 'neural/requirements.lock.txt'
 & $pythonPath scripts/download-models.py mithi kokoro
 if ($LASTEXITCODE -ne 0) { throw 'Model download failed.' }
 if ($Expressive) {
     if (!(Test-Path '.runtime/parler-env')) { Invoke-Uv venv .runtime/parler-env --python $pythonPath }
-    Invoke-Uv pip install --python '.runtime/parler-env/Scripts/python.exe' 'torch==2.8.0' 'torchaudio==2.8.0' --index-url 'https://download.pytorch.org/whl/cpu'
+    Invoke-Uv pip install --python '.runtime/parler-env/Scripts/python.exe' 'torch==2.8.0' 'torchaudio==2.8.0' --index-url $torchIndex
     Invoke-Uv pip install --python '.runtime/parler-env/Scripts/python.exe' -r 'neural/parler.lock.txt'
     & $pythonPath scripts/download-models.py parler
     if ($LASTEXITCODE -ne 0) { throw 'Expressive model download failed.' }

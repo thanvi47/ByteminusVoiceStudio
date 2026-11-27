@@ -3,7 +3,7 @@ import { inputSchema, parseScript, voices } from "@/lib/script";
 import { provider, usage, neuralStatus } from "@/lib/tts";
 import { ZodError } from "zod";
 export const runtime = "nodejs";
-export const maxDuration = 1300;
+export const maxDuration = 14400;
 export async function GET(
   _: Request,
   ctx: { params: Promise<{ action: string }> },
@@ -40,14 +40,20 @@ export async function POST(
   if ((await ctx.params).action !== "generate") return error("Not found.", 404);
   if (!rateLimit("synthesis", 12))
     return error("Please wait a minute before generating again.", 429);
-  if (Number(request.headers.get("content-length") ?? 0) > 20000)
+  if (Number(request.headers.get("content-length") ?? 0) > 80000)
     return error("Request too large.", 413);
   let input;
   try {
     const raw = await request.text();
-    if (raw.length > 20000) return error("Request too large.", 413);
+    if (raw.length > 80000) return error("Request too large.", 413);
     input = inputSchema.parse(JSON.parse(raw));
     parseScript(input.text);
+    if (input.text.length > 3000) {
+      const status = await neuralStatus();
+      const hardware = status.engineHardware?.[input.voice.split(":")[0]] ?? status.hardware;
+      const limit = Math.min(12000, hardware?.maxScriptCharacters ?? 3000);
+      if (input.text.length > limit) return error(`This runtime supports ${limit.toLocaleString()} script characters. Use a shorter section or a compatible CUDA GPU.`, 400);
+    }
   } catch (e) {
     if (e instanceof ZodError)
       return error(e.issues[0]?.message ?? "Invalid synthesis input.");

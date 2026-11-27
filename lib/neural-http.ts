@@ -6,7 +6,7 @@ export function postNeural(body: string, options: {
   port?: number; timeoutMs?: number; connectTimeoutMs?: number; maxBytes?: number;
 } = {}): Promise<Response> {
   const { port = 8123, timeoutMs = 1_250_000, connectTimeoutMs = 5000,
-    maxBytes = 90 * 48000 * 2 + 1024 } = options;
+    maxBytes = 600 * 48000 * 2 + 1024 } = options;
   return new Promise((resolve, reject) => {
     let settled = false;
     let connectTimer: ReturnType<typeof setTimeout> | undefined;

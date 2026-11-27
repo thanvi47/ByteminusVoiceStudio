@@ -1,9 +1,12 @@
+param([ValidateSet('auto','cpu','cuda')][string]$Device='auto')
 $ErrorActionPreference='Stop'
 $rootPath=Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $rootPath
 $env:UV_CACHE_DIR=Join-Path $rootPath '.cache/uv'
 if(!(Test-Path '.venv/Scripts/python.exe')) { & "$PSScriptRoot/setup-neural.ps1" }
-& .tools/uv/uv.exe pip install --python .venv/Scripts/python.exe 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cpu
+. "$PSScriptRoot/torch-backend.ps1"
+$torchIndex = Get-TorchIndex $Device
+& .tools/uv/uv.exe pip install --python .venv/Scripts/python.exe 'torch==2.8.0' 'torchaudio==2.8.0' --index-url $torchIndex
 if($LASTEXITCODE -ne 0){throw 'Audio dependency installation failed.'}
 & .tools/uv/uv.exe pip install --python .venv/Scripts/python.exe omnivoice==0.2.1 --no-deps
 if($LASTEXITCODE -ne 0){throw 'OmniVoice installation failed.'}

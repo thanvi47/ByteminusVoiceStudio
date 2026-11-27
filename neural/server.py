@@ -19,9 +19,10 @@ import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
-from neural.cpu_runtime import configure_cpu
+from neural.hardware import runtime_profile
 
-CPU_THREADS = configure_cpu(torch)
+HARDWARE = runtime_profile(torch)
+CPU_THREADS = HARDWARE["cpuThreads"]
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 CATALOG = {
     v["id"]: v
@@ -36,6 +37,18 @@ PARLER_PYTHON = (
     / ".runtime/parler-env"
     / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 )
+EXPRESSIVE_HARDWARE = HARDWARE
+if PARLER_PYTHON.exists():
+    try:
+        probe = subprocess.run([str(PARLER_PYTHON), str(ROOT / "neural/probe_hardware.py")],
+                               capture_output=True, timeout=30, cwd=ROOT)
+        if probe.returncode == 0:
+            EXPRESSIVE_HARDWARE = json.loads(probe.stdout)
+        else:
+            EXPRESSIVE_HARDWARE = {**HARDWARE, "device": "unavailable", "name": "Expressive runtime unavailable",
+                                   "reason": "The expressive Python environment could not initialize. Check the neural server log."}
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        EXPRESSIVE_HARDWARE = {**HARDWARE, "device": "unavailable", "name": "Expressive runtime unavailable"}
 
 
 class Input(BaseModel):
@@ -81,13 +94,13 @@ def installed():
         ),
         "kokoro": (ROOT / ".models/kokoro/kokoro-v1_0.pth").exists(),
         "parler": (ROOT / ".models/parler/model.safetensors").exists()
-        and PARLER_PYTHON.exists(),
+        and PARLER_PYTHON.exists() and EXPRESSIVE_HARDWARE["device"] != "unavailable",
         "indic": all((ROOT / file).is_file() for file in [
             ".models/indic/model.safetensors", ".models/indic/config.json",
             ".models/indic/tokenizer.json", ".models/indic/tokenizer_config.json",
             ".models/indic-description/spiece.model", ".models/indic-description/config.json",
         ])
-        and PARLER_PYTHON.exists(),
+        and PARLER_PYTHON.exists() and EXPRESSIVE_HARDWARE["device"] != "unavailable",
     }
 
 
@@ -96,7 +109,9 @@ def health():
     return {
         "status": "ok",
         "engines": installed(),
-        "device": "cpu",
+        "device": HARDWARE["device"],
+        "hardware": HARDWARE,
+        "engineHardware": {"mithi": HARDWARE, "kokoro": HARDWARE, "parler": EXPRESSIVE_HARDWARE, "indic": EXPRESSIVE_HARDWARE},
         "cpuThreads": CPU_THREADS,
         "logicalProcessors": os.cpu_count() or 1,
         "loaded": list(loaded),
@@ -139,7 +154,7 @@ def model_for(engine):
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        loaded[engine] = module.Mithi(str(ROOT / ".models/mithi"), device="cpu")
+        loaded[engine] = module.Mithi(str(ROOT / ".models/mithi"), device=HARDWARE["device"])
     elif engine == "kokoro":
         from kokoro import KModel, KPipeline
 
@@ -148,11 +163,11 @@ def model_for(engine):
                 config=str(ROOT / ".models/kokoro/config.json"),
                 model=str(ROOT / ".models/kokoro/kokoro-v1_0.pth"),
             )
-            .to("cpu")
+            .to(HARDWARE["device"])
             .eval()
         )
         loaded[engine] = {
-            lang: KPipeline(lang_code=lang, model=model, device="cpu")
+            lang: KPipeline(lang_code=lang, model=model, device=HARDWARE["device"])
             for lang in ["a", "b"]
         }
     return loaded[engine]
@@ -167,13 +182,11 @@ def render(data):
             503, f"{engine} is not installed. Run the neural setup script."
         )
     if engine in {"parler", "indic"}:
-        if len(data.text) > 600:
-            raise HTTPException(
-                400, "Use at most 600 characters with expressive voices on CPU."
-            )
         # Separate environment avoids incompatible Transformers requirements and releases RAM after each request.
         loaded.clear()
         gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         script_parts(
             data.text
         )  # Validate tags before handing text to the isolated worker.
@@ -241,9 +254,9 @@ def render(data):
         if not np.isfinite(audio).all():
             raise ValueError("Invalid audio")
         length += len(audio)
-        if length > 90 * 24000:
+        if length > HARDWARE["maxAudioSeconds"] * 24000:
             raise HTTPException(
-                413, "Audio exceeds 90 seconds. Generate shorter sections."
+                413, "Audio exceeds the runtime duration limit. Generate shorter sections."
             )
         chunks.append(audio)
     if not length:

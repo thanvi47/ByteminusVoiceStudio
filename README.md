@@ -25,9 +25,9 @@ npm ci --legacy-peer-deps
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Keep the terminal running. Setup installs isolated Python 3.12 environments and CPU PyTorch inside the project, and downloads several GB. Omit `-Expressive` for just Mithi/Kokoro. Model weights, caches, environments and generated samples are ignored by Git.
+Open http://127.0.0.1:3000. Keep the terminal running. Setup installs isolated Python 3.12 environments and selects official CPU or CUDA 12.8 PyTorch wheels using NVIDIA driver detection. Override with `-Device cpu` or `-Device cuda`. A compatible NVIDIA driver is required for CUDA; no driver or paid service is installed. Omit `-Expressive` for just Mithi/Kokoro. Model weights, caches, environments and generated samples are ignored by Git.
 
-After setup, `npm run dev` starts/reuses both services. First generation loads the chosen model; CPU generation can take longer than the audio duration. Parler is substantially slower and limited to 600 characters per request. See [NEURAL.md](docs/NEURAL.md).
+After setup, `npm run dev` starts/reuses both services. Hardware is selected independently in the main and expressive environments. The editor supports 3,000 characters on CPU, 6,000 on usable CUDA GPUs below 16 GB VRAM, and 12,000 on larger CUDA GPUs. Long neural scripts render sequentially in hardware-sized batches and join into one recording and estimated SRT. First generation loads the chosen model; CPU Parler can take many minutes per section. See [NEURAL.md](docs/NEURAL.md).
 
 Expressive CPU requests can exceed five minutes for a paragraph. The local audio connection uses an explicit deadline instead of fetch's independent header timeout; the worker allows up to 20 minutes. A timeout or dropped connection is reported separately from an offline server. Do not submit the same script again while generation is pending. The audio preview sits directly under Generate in the script column.
 
@@ -64,7 +64,7 @@ npm run start:studio
 
 Use a trusted HTTPS reverse proxy for production secure cookies. Python must stay on loopback port 8123. Development without a password is allowed only outside production. See [deployment](docs/DEPLOYMENT.md).
 
-Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Scripts are limited to 3,000 characters, 30 breaks and 90 seconds output; Parler and cloning input are capped at 600 characters. No merged dialogue, exact word alignment or automatic long-script assembly. Projects live in the browser; download generated audio before reload. Voices may mispronounce names or omit words; review before publishing.
+Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Neural script limits depend on the detected runtime, with at most 30 breaks and 10 minutes joined output on CPU or 30 minutes on CUDA. Legacy synthesis keeps its 3,000-character/90-second limits; voice cloning keeps its separate 600-character/90-second limits. No merged dialogue or exact word alignment. Projects live in the browser; download generated audio before reload. Voices may mispronounce names or omit words; review before publishing.
 
 ## Optional voice cloning
 

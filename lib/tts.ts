@@ -2,6 +2,7 @@ import init from "@echogarden/espeak-ng-emscripten";
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { masterPcm } from "./audio-levels.mjs";
 import { postNeural } from "./neural-http";
+import { speechBatches } from "./speech-batches";
 import {
   delivery,
   escapeXML,
@@ -53,6 +54,8 @@ export async function neuralStatus() {
     return (await response.json()) as {
       engines: Record<string, boolean>;
       device: string;
+      hardware?: { name: string; cpuThreads: number; batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number; reason?: string };
+      engineHardware?: Record<string, { batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number }>;
     };
   } catch {
     return {
@@ -74,7 +77,7 @@ export function encode(
   chunks.push(Buffer.from(encoder.flush()));
   return Buffer.concat(chunks);
 }
-async function neuralSynthesize(input: SynthesisInput) {
+async function neuralPart(input: SynthesisInput) {
   // Neural emotion comes from a model prompt, never a synthetic pitch/speed effect.
   // Natural engines ignore emotion; explicit manual sliders remain available.
   let response: Response;
@@ -113,9 +116,33 @@ async function neuralSynthesize(input: SynthesisInput) {
   if (
     !buffer.length ||
     buffer.length % 2 ||
-    buffer.length > 90 * sampleRate * 2
+    buffer.length > 600 * sampleRate * 2
   )
     throw new Error("AUDIO_LIMIT");
+  return { buffer, sampleRate };
+}
+async function neuralSynthesize(input: SynthesisInput) {
+  const status = input.text.length > 300 ? await neuralStatus() : undefined;
+  const engineName = input.voice.split(":")[0];
+  const hardware = status?.engineHardware?.[engineName] ?? status?.hardware;
+  const budget = Math.max(40, Math.min(1200, hardware?.batchCharacters ?? 300));
+  const maxAudio = Math.max(90, Math.min(1800, hardware?.maxAudioSeconds ?? 600));
+  const batches = input.text.length > budget ? speechBatches(input.text, budget) : [input.text];
+  const buffers: Buffer[] = [];
+  let sampleRate = 0, bytes = 0;
+  for (const text of batches) {
+    const pauseTag = /\[pause (\d+(?:\.\d+)?)s\]/g;
+    const onlyPauses = !text.replace(pauseTag, "").trim();
+    const pauseSeconds = onlyPauses ? [...text.matchAll(pauseTag)].reduce((sum, m) => sum + Number(m[1]), 0) : 0;
+    const part = onlyPauses ? { buffer: Buffer.alloc(Math.round(pauseSeconds * 24000) * 2), sampleRate: 24000 }
+      : await neuralPart({ ...input, text });
+    if (sampleRate && sampleRate !== part.sampleRate) throw new Error("NEURAL: Audio sample rate changed between sections.");
+    sampleRate = part.sampleRate;
+    bytes += part.buffer.length;
+    if (bytes > maxAudio * sampleRate * 2) throw new Error("AUDIO_LIMIT");
+    buffers.push(part.buffer);
+  }
+  const buffer = Buffer.concat(buffers);
   const pcm = new Int16Array(buffer.length / 2);
   for (let i = 0; i < pcm.length; i++) pcm[i] = buffer.readInt16LE(i * 2);
   pcm.set(

@@ -60,10 +60,16 @@ function file(data: string | Blob, name: string, type = "application/json") {
 }
 export default function VoicePlayground({
   engines,
+  scriptLimit = 3000,
+  runtimeLimits,
+  onRuntimeChange,
   onOpenStudio,
   active,
 }: {
   engines: Record<string, boolean>;
+  scriptLimit?: number;
+  runtimeLimits?: Record<string, number>;
+  onRuntimeChange?: (engine: string) => void;
   onOpenStudio: (input: SynthesisInput) => void;
   active: boolean;
 }) {
@@ -103,6 +109,8 @@ export default function VoicePlayground({
           ? "kokoro"
           : "parler";
   const available = voices.filter((v) => v.engine === group);
+  const currentLimit = runtimeLimits?.[group] ?? scriptLimit;
+  useEffect(() => { if (active) onRuntimeChange?.(group); }, [active, group, onRuntimeChange]);
   const request = {
     ...input,
     style:
@@ -111,7 +119,7 @@ export default function VoicePlayground({
   const currentVibe =
     vibes.find((v) => v.id === vibeId)?.name ?? "Custom direction";
   const valid = inputSchema.safeParse(request);
-  const canGenerate = Boolean(valid.success && engines[group] && !busy);
+  const canGenerate = Boolean(valid.success && input.text.length <= currentLimit && engines[group] && !busy);
   useEffect(() => {
     fetch("/voice-previews/v1/manifest.json")
       .then((r) => r.json())
@@ -268,7 +276,7 @@ export default function VoicePlayground({
     if (!f) return;
     setError("");
     try {
-      if (f.size > 30000) throw new Error();
+      if (f.size > 80000) throw new Error();
       restore(recipeSchema.parse(JSON.parse(await f.text())));
     } catch {
       setError("Use a valid Byteminus voice recipe JSON under 30 KB.");
@@ -616,7 +624,7 @@ export default function VoicePlayground({
           <textarea
             aria-label="Playground script"
             className="director-script-input"
-            maxLength={selected.styleMode === "prompted" ? 600 : 3000}
+            maxLength={currentLimit}
             rows={6}
             value={input.text}
             onChange={(e) => patch({ text: e.target.value })}
@@ -624,12 +632,12 @@ export default function VoicePlayground({
           <div className="director-script-meta">
             <span>
               {input.text.length} /{" "}
-              {selected.styleMode === "prompted" ? 600 : 3000} characters
+              {currentLimit.toLocaleString()} characters · automatic sections
             </span>
             <button
               disabled={
                 input.text.length + 14 >
-                (selected.styleMode === "prompted" ? 600 : 3000)
+                currentLimit
               }
               onClick={() => patch({ text: input.text + " [pause 500ms] " })}
             >
@@ -750,7 +758,7 @@ export default function VoicePlayground({
               )}{" "}
               {busy ? `Generating… ${seconds}s` : "Generate a take"}
             </button>
-            {busy && seconds >= 240 && <p role="status">CPU-তে কাজ চলছে। দীর্ঘ script-এ ৫–১০ মিনিট বা বেশি লাগতে পারে। নতুন করে Generate চাপবেন না।</p>}
+            {busy && seconds >= 240 && <p role="status">দীর্ঘ script অংশে অংশে তৈরি হচ্ছে; CPU-তে অনেক সময় লাগতে পারে। নতুন করে Generate চাপবেন না।</p>}
             <button onClick={() => onOpenStudio(request)}>
               Open in Voice studio
             </button>
@@ -759,7 +767,7 @@ export default function VoicePlayground({
             </button>
           </div>
           <p className="director-note">
-            CPU generation can take several minutes. Each completed take
+            Hardware is selected automatically; long scripts use sequential sections. CPU generation can take many minutes. Each completed take
             includes audio and estimated sentence-level SRT.
           </p>
         </section>

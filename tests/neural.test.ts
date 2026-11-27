@@ -5,6 +5,25 @@ const { post } = vi.hoisted(() => ({ post: vi.fn() }));
 vi.mock("../lib/neural-http", () => ({ postNeural: post }));
 afterEach(() => { vi.unstubAllGlobals(); post.mockReset(); });
 describe("neural interoperability", () => {
+  it("uses the selected engine's hardware budget and joins all sections before export", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ device: "cpu",
+      hardware: { batchCharacters: 300 }, engineHardware: { parler: { batchCharacters: 160 } } })));
+    post.mockImplementation(() => Promise.resolve(new Response(new Uint8Array(4800), { headers: { "X-Sample-Rate": "24000" } })));
+    const result = await provider.synthesize(inputSchema.parse({ text: "Hello world. ".repeat(70), voice: "parler:Lea" }));
+    expect(post.mock.calls.length).toBeGreaterThan(4);
+    expect(post.mock.calls.every(([body]) => JSON.parse(body).text.length <= 160)).toBe(true);
+    expect(result.duration).toBeCloseTo(post.mock.calls.length * 0.1);
+  });
+  it("preserves long pause-only sections without submitting an invalid speech job", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ hardware: { batchCharacters: 160 } })));
+    post.mockImplementation((body) => {
+      const pauses = [...JSON.parse(body).text.matchAll(/\[pause 10s\]/g)].length;
+      return Promise.resolve(new Response(new Uint8Array(4800 + pauses * 480000), { headers: { "X-Sample-Rate": "24000" } }));
+    });
+    const result = await provider.synthesize(inputSchema.parse({ text: "[pause 10s] ".repeat(30) + "Hello.", voice: "parler:Lea" }));
+    expect(result.duration).toBeGreaterThanOrEqual(300);
+    expect(post.mock.calls.every(([body]) => /Hello/.test(JSON.parse(body).text))).toBe(true);
+  });
   it.each(["mithi:charvi", "kokoro:af_heart"])("never turns emotion into pitch or time-stretch effects for %s", async (voice) => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(new Uint8Array(4800), {
       headers: { "X-Sample-Rate": "24000" },
