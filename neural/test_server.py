@@ -4,6 +4,36 @@ from neural.server import app, script_parts
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_cpu_threads_use_multiple_cores_and_bound_overrides(self):
+        from neural.cpu_runtime import cpu_threads
+        from unittest.mock import patch
+        with patch("neural.cpu_runtime.os.cpu_count", return_value=16):
+            with patch.dict("os.environ", {}, clear=True):
+                self.assertEqual(cpu_threads(), 8)
+            with patch.dict("os.environ", {"BYTEMINUS_CPU_THREADS": "4"}):
+                self.assertEqual(cpu_threads(), 4)
+            with patch.dict("os.environ", {"BYTEMINUS_CPU_THREADS": "32"}):
+                self.assertEqual(cpu_threads(), 16)
+            with patch.dict("os.environ", {"BYTEMINUS_CPU_THREADS": "0"}):
+                with self.assertRaises(ValueError):
+                    cpu_threads()
+
+    def test_zero_intensity_ignores_conflicting_emotional_direction(self):
+        from neural.parler_worker import description
+        prompt = description(dict(voice="indic:Aditi", emotion="Scared", intensity=0,
+                                  style="Scream in terror with extreme fear"))
+        self.assertIn("neutral", prompt)
+        self.assertNotIn("terror", prompt)
+
+    def test_low_intensity_restrains_excited_and_scared_vibes(self):
+        from neural.parler_worker import description
+        for emotion in ["Excited", "Scared"]:
+            prompt = description(dict(voice="indic:Aditi", emotion=emotion, intensity=25,
+                                      style="energetic performance"))
+            self.assertIn("very subtle and restrained", prompt)
+            self.assertIn("normal pitch range", prompt)
+            self.assertNotIn("fast pacing", prompt)
+
     def test_targeted_english_emotions_have_distinct_unprocessed_directions(self):
         from neural.parler_worker import description, apply_controls
         import numpy as np

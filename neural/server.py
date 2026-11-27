@@ -19,8 +19,9 @@ import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
+from neural.cpu_runtime import configure_cpu
 
-torch.set_num_threads(min(4, os.cpu_count() or 1))
+CPU_THREADS = configure_cpu(torch)
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 CATALOG = {
     v["id"]: v
@@ -96,6 +97,8 @@ def health():
         "status": "ok",
         "engines": installed(),
         "device": "cpu",
+        "cpuThreads": CPU_THREADS,
+        "logicalProcessors": os.cpu_count() or 1,
         "loaded": list(loaded),
     }
 

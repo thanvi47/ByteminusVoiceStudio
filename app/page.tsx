@@ -1100,7 +1100,6 @@ export default function Studio() {
                           setStyle("");
                           setRate(1);
                           setPitch(1);
-                          setIntensity(70);
                         }
                       }}
                     >
@@ -1133,7 +1132,7 @@ export default function Studio() {
                       />
                     </label>
                     <div className="range-ends">
-                      <span>Subtle</span>
+                      <span>0% Off · 1–34% Subtle</span>
                       <span>Expressive</span>
                     </div>
                     <label className="range-label">

@@ -220,7 +220,7 @@ export default function VoicePlayground({
     setDirections({ ...v.directions });
     patch({ emotion: v.emotion });
     if (v.emotion === "Excited" || v.emotion === "Scared")
-      patch({ rate: 1, pitch: 1, intensity: 70 });
+      patch({ rate: 1, pitch: 1 });
   }
   function shuffled<T>(items: T[]) {
     return items
@@ -651,7 +651,7 @@ export default function VoicePlayground({
                     const v = directionsForEmotion(emotion)!;
                     setDirections({ ...v.directions });
                     setVibeId(v.id);
-                    patch({ rate: 1, pitch: 1, intensity: 70 });
+                    patch({ rate: 1, pitch: 1 });
                     return;
                   }
                   setDirections((old) => ({
@@ -667,7 +667,7 @@ export default function VoicePlayground({
               </select>
             </label>
             <label>
-              Intensity {input.intensity}%
+              Intensity {input.intensity}% · 0% Off / 1–34% Subtle
               <input
                 type="range"
                 min="0"

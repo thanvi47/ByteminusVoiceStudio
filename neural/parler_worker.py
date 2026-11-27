@@ -9,6 +9,9 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from neural.cpu_runtime import configure_cpu
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -52,6 +55,17 @@ def description(data):
         "slightly" if intensity < 35 else "moderately" if intensity < 75 else "very"
     )
     emotion = data["emotion"] if intensity > 0 else "Neutral"
+    if intensity == 0:
+        return (f"{speaker} speaks naturally in a neutral, conversational tone, "
+                "with normal pacing and pitch. Clear close recording, no reverberation or background noise.")
+    if intensity < 35:
+        # A full-strength vibe must not undo a low intensity selection.
+        feeling = {"Excited": "a little happy and pleased", "Scared": "a little worried and cautious"}.get(emotion, emotion.lower())
+        return (f"{speaker} speaks naturally, sounding {feeling}. "
+                f"{data.get('style', '')} "
+                "Keep all emotional cues very subtle and restrained. Mostly conversational, "
+                "normal pitch range and pacing, no exaggerated acting or forced whispering. "
+                "Clear close recording, no reverberation or background noise.")
     if data["voice"].startswith(("parler:", "indic:")) and emotion in {"Excited", "Scared"}:
         # These performances need their own prosody, not the old contradictory
         # "natural speaking rate and natural pitch" instruction. Never add DSP here.
@@ -123,11 +137,11 @@ def load_model(engine="parler"):
     from parler_tts import ParlerTTSForConditionalGeneration
     from transformers import AutoTokenizer
 
-    torch.set_num_threads(min(4, os.cpu_count() or 1))
+    threads = configure_cpu(torch)
     if engine not in {"parler", "indic"}:
         raise ValueError("Unknown expressive engine")
     folder = str(ROOT / ".models" / engine)
-    print("Loading expressive model on CPU...", flush=True)
+    print(f"Loading expressive model on CPU with {threads} compute threads...", flush=True)
     model = (
         ParlerTTSForConditionalGeneration.from_pretrained(
             folder, local_files_only=True, attn_implementation="eager"
