@@ -37,8 +37,19 @@ lock = threading.Lock()
 cancel_event = threading.Event()
 generation_state_lock = threading.Lock()
 active_generation = None
+active_progress = {}
 pending_cancellations = {}
 loaded = {}
+def report_progress(value):
+    with generation_state_lock:
+        active_progress.clear()
+        active_progress.update(value)
+
+@app.get("/progress")
+def generation_progress(id: str):
+    with generation_state_lock:
+        if not active_generation or id != active_generation: raise HTTPException(404, "Generation not active.")
+        return dict(active_progress)
 PARLER_PYTHON = (
     ROOT
     / ".runtime/parler-env"
@@ -266,7 +277,7 @@ def render(data):
         EXPRESSIVE_WORKER.close()
         release_main_models()
         script_parts(data.text)
-        output, actual = DIRECTML_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event)
+        output, actual = DIRECTML_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event, on_progress=report_progress)
         ENGINE_HARDWARE[engine] = actual
         if actual["device"] == "cpu": DIRECTML_WORKER.close()
         return output, 24000
@@ -274,7 +285,7 @@ def render(data):
         DIRECTML_WORKER.close()
         release_main_models()
         script_parts(data.text)
-        output, actual = EXPRESSIVE_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event)
+        output, actual = EXPRESSIVE_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event, on_progress=report_progress)
         ENGINE_HARDWARE[engine] = actual
         return output, 24000
     DIRECTML_WORKER.close()
@@ -360,6 +371,8 @@ def synthesize(data: Input):
     try:
         with generation_state_lock:
             active_generation = data.generationId
+            active_progress.clear()
+            active_progress.update(stage="Preparing the speech engine…")
             cancel_event.clear()
             if data.generationId in pending_cancellations:
                 pending_cancellations.pop(data.generationId)

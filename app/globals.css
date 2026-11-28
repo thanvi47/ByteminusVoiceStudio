@@ -2312,3 +2312,7 @@ audio {
 .memory-status p { margin: 6px 0 0; line-height: 1.6; opacity: .85; }
 .memory-warning { border-color: #d69a36; }
 .render-estimate { font-size: 13px; line-height: 1.7; }
+.generation-progress progress:indeterminate { background: linear-gradient(90deg, #302b3b 20%, #a58aff 50%, #302b3b 80%); background-size: 200% 100%; animation: generation-activity 1.5s linear infinite; }
+.generation-progress progress:indeterminate::-webkit-progress-bar { background: transparent; }
+@keyframes generation-activity { from { background-position: 200% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .generation-progress progress:indeterminate { animation: none; } }

@@ -9,6 +9,9 @@ from neural.isolated_runtime import PersistentWorker
 FIXTURE = '''import sys,json,os,time
 for line in sys.stdin.buffer:
     request=json.loads(line)
+    if request['input'].get('progress'):
+        sys.stdout.buffer.write(json.dumps(dict(event='progress',progress=dict(stage='Generating audio',steps=16))).encode()+b'\\n')
+        sys.stdout.buffer.flush()
     if request['input'].get('slow'): time.sleep(10)
     size=999999999 if request['input'].get('oversize') else 4
     header=dict(ok=True,size=size,runtime=dict(pid=os.getpid(),voice=request['input'].get('voice')))
@@ -35,6 +38,12 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(other, audio)
         self.assertEqual(first["pid"], second["pid"])
         self.assertEqual(second["voice"], "second")
+
+    def test_progress_frames_do_not_corrupt_audio_response(self):
+        events = []
+        audio, _ = self.worker.request({"progress": True}, on_progress=events.append)
+        self.assertEqual(audio, b"1234")
+        self.assertEqual(events, [dict(stage="Generating audio", steps=16)])
 
     def test_oversized_frame_is_rejected_before_allocation(self):
         with self.assertRaisesRegex(RuntimeError, "response size"):

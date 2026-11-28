@@ -47,6 +47,8 @@ New recordings try to play automatically when ready. Studio has a **Play automat
 
 Studio shows completed-section progress and a **Cancel generation** button. The percentage counts finished text sections and preparation stages; it is not a time estimate, so it can stay still during model loading or a long section. Isolated workers are stopped on cancellation; native operations finish their current operation before cancellation is acknowledged. Cancelled recordings are not added to history. Clients can supply a UUID in `X-Generation-ID` on `POST /api/tts/generate`, poll `GET /api/tts/progress?id=UUID` and cancel with `POST /api/tts/cancel?id=UUID`; the existing authentication and same-origin protections apply. Job metadata expires after 30 minutes of inactivity for finished jobs.
 
+Before any measurable work finishes, the bar is animated without a percentage. Expressive workers report model preparation, completed internal audio parts and live decoder steps through private framed messages; these do not modify generated audio. A single-section expressive request can therefore show progress within its internal parts. Decoder steps indicate ongoing work, not a percentage of a known total. Estimated time never displays a misleading zero-second lower bound.
+
 ## Voices and delivery
 
 | Engine | Profiles | Language | Controls |

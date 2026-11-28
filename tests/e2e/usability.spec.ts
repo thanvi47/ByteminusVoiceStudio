@@ -37,3 +37,18 @@ test("progress reflects server percentage and cancellation waits for acknowledgm
   await expect(page.getByText("Generation cancelled. No partial recording was saved.")).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveCount(0);
 });
+
+test("unknown single-section progress is animated rather than falsely zero percent", async ({ page }) => {
+  let finish: (() => void) | undefined;
+  await page.route("**/api/tts/generate", async (route) => {
+    await new Promise<void>((resolve) => { finish = resolve; });
+    await route.fulfill({ status: 499, json: { error: { message: "Generation cancelled." } } });
+  });
+  await page.route("**/api/tts/progress?*", (route) => route.fulfill({ json: { status: "running", percent: 0, stage: "Generating audio part 1 of 1 · 48 decoder steps" } }));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Generate voice \+ SRT/ }).click();
+  await expect(page.getByText(/48 decoder steps/)).toBeVisible();
+  await expect(page.getByRole("progressbar")).not.toHaveAttribute("value");
+  await expect(page.getByText(/0% complete/)).toHaveCount(0);
+  finish?.();
+});

@@ -16,6 +16,17 @@ export async function GET(
     const id = new URL(request.url).searchParams.get("id") ?? "";
     if (!validJobId(id)) return error("Invalid generation ID.", 400);
     const job = getJob(id);
+    if (job?.status === "running") {
+      try {
+        const response = await fetch(`http://127.0.0.1:8123/progress?id=${id}`, { cache: "no-store", signal: AbortSignal.timeout(1200) });
+        if (response.ok) {
+          const live = await response.json();
+          if (typeof live.stage === "string") job.stage = live.stage;
+          if (job.total === 1 && job.completed === 0 && Number.isInteger(live.completed) && Number.isInteger(live.total) && live.total > 0 && live.completed > 0 && live.completed <= live.total)
+            job.percent = Math.floor(live.completed / live.total * 95);
+        }
+      } catch { /* Coarse section progress remains available on older servers. */ }
+    }
     return job ? Response.json({ ...job, memory: runtimeMemory() }, { headers: { "Cache-Control": "no-store" } }) : error("Generation not found.", 404);
   }
   if (action === "voices")

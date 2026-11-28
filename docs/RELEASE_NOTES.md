@@ -1,5 +1,13 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.6
+
+- Fixed the single-section progress display: unknown progress uses an animated bar instead of remaining at a misleading 0%. Expressive generation reports live decoder steps and internal audio-part completion, including loading/preparation stages.
+- Added bounded progress frames to the private worker protocol without changing PCM output. Decoder hooks are removed after success or failure. Browser percentages do not regress when polling replies arrive out of order.
+- Estimated remaining time uses an 'up to' range when the lower bound expires, rather than displaying '0 seconds remaining'.
+- Verified 97 unit tests, 24 Python worker/server/progress tests and six desktop/mobile browser checks.
+- A real local Aditi request delivered model-loading stages and live decoder-step updates to the web progress API before completing its WAV output.
+
 ## v0.2.5
 
 - Added a distinctive purple waveform / green Play launcher icon, with native Windows shortcuts named START ByteminusVoiceStudio.

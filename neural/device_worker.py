@@ -98,7 +98,7 @@ def natural(data, profile):
     return (np.clip(np.concatenate(chunks), -1, 1) * 32767).astype("<i2").tobytes()
 
 
-def generate(data, requested=None):
+def generate(data, requested=None, on_progress=None):
     import torch
     started = time.monotonic()
     with contextlib.redirect_stdout(sys.stderr):
@@ -113,6 +113,7 @@ def generate(data, requested=None):
             clear_cache()
             profile = runtime_profile(torch, engine=engine, requested=requested)
         def operation(selected):
+            if on_progress: on_progress(dict(stage="Loading or preparing the speech model…"))
             if engine in {"parler", "indic"}:
                 from neural.parler_worker import load_model, synthesize
                 def load():
@@ -121,7 +122,7 @@ def generate(data, requested=None):
                 (model, tokenizer, metadata), warm = cached_model((engine, selected["device"]), load)
                 selected.update({k: metadata[k] for k in ("executionMode", "cpuOperators") if k in metadata})
                 selected["modelCacheHit"] = warm
-                return synthesize(data, model, tokenizer)
+                return synthesize(data, model, tokenizer, on_progress=on_progress)
             return natural(data, selected)
         output, actual = execute(torch, profile, operation, engine=engine)
         actual["renderSeconds"] = round(time.monotonic() - started, 3)
@@ -138,7 +139,10 @@ if __name__ == "__main__":
             try:
                 if len(line) > 30000: raise ValueError("Request too large")
                 request = json.loads(line.decode("utf-8"))
-                output, actual = generate(request["input"], requested=request.get("backend"))
+                def progress(value):
+                    sys.__stdout__.buffer.write(json.dumps(dict(event="progress", progress=value)).encode() + b"\n")
+                    sys.__stdout__.buffer.flush()
+                output, actual = generate(request["input"], requested=request.get("backend"), on_progress=progress)
                 header = dict(ok=True, size=len(output), runtime=actual)
             except Exception as exc:
                 import traceback

@@ -180,7 +180,7 @@ def load_model(engine="parler", profile=None):
     return model, tokenizer
 
 
-def synthesize(data, model, tokenizer):
+def synthesize(data, model, tokenizer, on_progress=None):
     import numpy as np
     import torch
     from scipy.signal import resample_poly
@@ -193,7 +193,9 @@ def synthesize(data, model, tokenizer):
     chunks = []
     length = 0
     torch.manual_seed(42)
-    for part in short_parts(data["text"]):
+    render_parts = list(short_parts(data["text"]))
+    for part_index, part in enumerate(render_parts):
+        if on_progress: on_progress(dict(stage=f"Rendering audio part {part_index + 1} of {len(render_parts)}…", completed=part_index, total=len(render_parts), steps=0))
         if isinstance(part, float):
             audio = np.zeros(round(part * 24000), dtype=np.float32)
         elif not part.strip():
@@ -203,14 +205,24 @@ def synthesize(data, model, tokenizer):
             # DirectML cannot attach a version counter to inference tensors.
             # no_grad keeps inference gradients disabled without that restriction.
             inference_context = torch.no_grad if str(device).startswith("privateuseone") else torch.inference_mode
-            with inference_context():
-                generation = model.generate(
-                    input_ids=inputs.input_ids.to(device),
-                    attention_mask=inputs.attention_mask.to(device),
-                    prompt_input_ids=prompt.input_ids.to(device),
-                    prompt_attention_mask=prompt.attention_mask.to(device),
-                    max_new_tokens=1800,
-                )
+            steps = 0
+            def decoder_step(_module, _inputs, _output):
+                nonlocal steps
+                steps += 1
+                if on_progress and (steps == 1 or steps % 16 == 0):
+                    on_progress(dict(stage=f"Generating audio part {part_index + 1} of {len(render_parts)} · {steps} decoder steps", completed=part_index, total=len(render_parts), steps=steps))
+            hook = model.decoder.register_forward_hook(decoder_step) if on_progress else None
+            try:
+                with inference_context():
+                    generation = model.generate(
+                        input_ids=inputs.input_ids.to(device),
+                        attention_mask=inputs.attention_mask.to(device),
+                        prompt_input_ids=prompt.input_ids.to(device),
+                        prompt_attention_mask=prompt.attention_mask.to(device),
+                        max_new_tokens=1800,
+                    )
+            finally:
+                if hook: hook.remove()
             audio = generation.cpu().numpy().squeeze()
             sr = model.config.sampling_rate
             frame_rate = model.audio_encoder.config.frame_rate
@@ -227,6 +239,7 @@ def synthesize(data, model, tokenizer):
         if length > 600 * 24000:
             raise ValueError("Audio exceeds 10 minutes; generate shorter sections")
         chunks.append(audio)
+        if on_progress: on_progress(dict(stage=f"Finished audio part {part_index + 1} of {len(render_parts)}", completed=part_index + 1, total=len(render_parts)))
     if not length:
         raise ValueError("No audio generated")
     return (np.clip(np.concatenate(chunks), -1, 1) * 32767).astype("<i2").tobytes()

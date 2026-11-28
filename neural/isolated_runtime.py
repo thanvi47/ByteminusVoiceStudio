@@ -52,7 +52,7 @@ class PersistentWorker:
                 pass
         threading.Thread(target=drain, daemon=True).start()
 
-    def request(self, data, *, backend="directml", timeout=1200, cancel_event=None):
+    def request(self, data, *, backend="directml", timeout=1200, cancel_event=None, on_progress=None):
         with self.lock:
             self._start()
             process = self.process
@@ -61,9 +61,12 @@ class PersistentWorker:
                 try:
                     process.stdin.write(json.dumps(dict(input=data, backend=backend), ensure_ascii=False).encode("utf-8") + b"\n")
                     process.stdin.flush()
-                    line = process.stdout.readline(10000)
-                    if not line or not line.endswith(b"\n"): raise RuntimeError("Accelerator worker exited before its response")
-                    header = json.loads(line)
+                    while True:
+                        line = process.stdout.readline(10000)
+                        if not line or not line.endswith(b"\n"): raise RuntimeError("Accelerator worker exited before its response")
+                        header = json.loads(line)
+                        if header.get("event") != "progress": break
+                        if on_progress is not None: on_progress(header.get("progress", {}))
                     size = header.get("size", -1)
                     if not isinstance(size, int) or not 0 <= size <= 1800 * 24000 * 2 or size % 2:
                         raise RuntimeError("Invalid accelerator response size")

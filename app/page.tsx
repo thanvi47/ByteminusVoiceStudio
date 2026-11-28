@@ -335,7 +335,7 @@ export default function Studio() {
         const status = await response.json();
         setRenderEstimate(status.estimate ?? null);
         if (status.memory) setMemory(status.memory);
-        setGenerationPercent(Math.max(0, Math.min(100, status.percent)));
+        setGenerationPercent((previous) => Math.max(previous, Math.min(100, status.percent)));
         setProgress(status.stage);
         if (cancelRequested.current && !cancelSent.current && status.status === "running") await requestCancel();
       } catch { /* Keep the generation connection active through transient polling failures. */ }
@@ -561,16 +561,16 @@ export default function Studio() {
       {busy && (
         <div className="generation-progress">
           <div className="generation-progress-heading">
-            <span role="status">{cancelling ? "Cancelling…" : `${generationPercent}% complete`} · {elapsed}s</span>
+            <span role="status">{cancelling ? "Cancelling…" : generationPercent > 0 ? `${generationPercent}% complete` : "Working · waiting for measurable audio progress"} · {elapsed}s</span>
             <button type="button" disabled={cancelling} onClick={() => void requestCancel()}>{cancelling ? "Cancelling…" : "Cancel generation"}</button>
           </div>
-          <progress aria-label="Speech generation progress" max={100} value={generationPercent} />
+          <progress aria-label="Speech generation progress" max={100} value={generationPercent > 0 ? generationPercent : undefined} />
           {!cancelling && <p className="render-estimate" role="status">{(() => {
             if (generationPercent >= 95) return "Finishing audio processing and download…";
             if (!renderEstimate) return "Estimated time: learning this model's speed. An estimate appears after a section finishes or on a later generation.";
             const remaining = remainingEstimate(renderEstimate.low, renderEstimate.high, renderEstimate.updated, Date.now());
             const duration = (seconds: number) => seconds >= 60 ? `${Math.ceil(seconds / 60)} min` : `${seconds}s`;
-            return remaining ? `Approx. ${duration(remaining.low)}–${duration(remaining.high)} remaining · based on ${renderEstimate.samples} measured section(s). Model loading and memory pressure can change this.` : "Taking longer than estimated. Recalculating after the current section finishes…";
+            return remaining ? `Approx. ${remaining.low > 0 ? `${duration(remaining.low)}–` : "up to "}${duration(remaining.high)} remaining · based on ${renderEstimate.samples} measured section(s). Model loading and memory pressure can change this.` : "Taking longer than estimated. Recalculating after the current section finishes…";
           })()}</p>}
           <div className="progress">
           <span className="spin">
@@ -579,7 +579,7 @@ export default function Studio() {
           {progress} {elapsed}s
           {elapsed >= 240 && <span> · দীর্ঘ script অংশে অংশে তৈরি হচ্ছে; CPU-তে অনেক সময় লাগতে পারে। আবার Generate চাপবেন না।</span>}
           </div>
-          <small>Progress follows completed text sections and final preparation, not elapsed time. A model operation may take time without changing the percentage.</small>
+          <small>The animated bar means the model is working without a known percentage. Expressive decoder steps show live activity; percentages count completed audio parts/sections, not elapsed time.</small>
         </div>
       )}
     </div>
