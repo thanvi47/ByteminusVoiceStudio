@@ -10,6 +10,8 @@ The site is plain static HTML so readers and crawlers do not need client-side Ja
 
 ## Free indexing and measurement steps for the owner
 
+Status on 28 November 2026: the project URL-prefix property was verified in Google Search Console using the homepage HTML tag. The homepage indexing request was accepted into Google's priority crawl queue. This is not confirmation that the page is indexed or ranked. The sitemap submission was accepted, but its initial Search Console status was `Couldn't fetch` / `Sitemap could not be read`; a direct public request returned HTTP 200 and valid XML at the correct URL. Google processing/retry is still needed. No Bing verification or AI-provider citation is claimed. Keep the public verification meta tag in the homepage to retain ownership verification.
+
 1. In [Google Search Console](https://search.google.com/search-console), add the **URL-prefix** property `https://thanvi47.github.io/ByteminusVoiceStudio/`. A domain property would require DNS control of github.io, which this repository does not provide.
 2. Use Google's HTML verification file or meta-tag method and add the provided value under `docs/` or in `docs/index.html`; commit/push, wait for Pages deployment, then verify. No Search Console verification has been claimed unless actually completed.
 3. Submit `https://thanvi47.github.io/ByteminusVoiceStudio/sitemap.xml` in Sitemaps. Inspect the homepage URL and use Request indexing if Google makes it available. A request is not guaranteed indexing.
