@@ -2,6 +2,7 @@ import { authenticated, error, rateLimit, sameOrigin } from "@/lib/auth";
 import { inputSchema, parseScript, voices } from "@/lib/script";
 import { provider, usage, neuralStatus } from "@/lib/tts";
 import { ZodError } from "zod";
+import { runtimeMemory } from "@/lib/runtime-memory";
 import { createJob, getJob, cancelJob, validJobId, throwIfCancelled } from "@/lib/generation-jobs";
 export const runtime = "nodejs";
 export const maxDuration = 14400;
@@ -15,7 +16,7 @@ export async function GET(
     const id = new URL(request.url).searchParams.get("id") ?? "";
     if (!validJobId(id)) return error("Invalid generation ID.", 400);
     const job = getJob(id);
-    return job ? Response.json(job, { headers: { "Cache-Control": "no-store" } }) : error("Generation not found.", 404);
+    return job ? Response.json({ ...job, memory: runtimeMemory() }, { headers: { "Cache-Control": "no-store" } }) : error("Generation not found.", 404);
   }
   if (action === "voices")
     return Response.json(
@@ -23,6 +24,7 @@ export async function GET(
         voices,
         capabilities: provider.getCapabilities(),
         neural: await neuralStatus(),
+        memory: runtimeMemory(),
       },
       { headers: { "Cache-Control": "no-store" } },
     );

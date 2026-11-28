@@ -22,11 +22,15 @@ test("progress reflects server percentage and cancellation waits for acknowledgm
     await new Promise<void>((resolve) => { finish = resolve; });
     await route.fulfill({ status: 499, json: { error: { message: "Generation cancelled." } } });
   });
-  await page.route("**/api/tts/progress?*", (route) => route.fulfill({ json: { status: "running", percent: 37, stage: "Rendering section 2 of 5" } }));
+  const measured = Date.now();
+  await page.route("**/api/tts/progress?*", (route) => route.fulfill({ json: { status: "running", percent: 37, stage: "Rendering section 2 of 5", estimate: { low: 60, high: 180, samples: 2, updated: measured }, memory: { totalGB: 16, freeGB: 1.2, pressure: "high" } } }));
   await page.route("**/api/tts/cancel?*", (route) => route.fulfill({ json: { status: "cancelling" } }));
   await page.goto("/");
   await page.getByRole("button", { name: /Generate voice \+ SRT/ }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("value", "37");
+  await expect(page.getByText(/Approx\..*remaining/)).toBeVisible();
+  await expect(page.getByText(/Server RAM: 1.2 GB free/)).toBeVisible();
+  await expect(page.getByText(/Low free RAM: close unused apps/)).toBeVisible();
   await page.getByRole("button", { name: "Cancel generation", exact: true }).click();
   await expect(page.getByRole("button", { name: "Cancelling…", exact: true })).toBeDisabled();
   finish?.();

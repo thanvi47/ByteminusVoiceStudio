@@ -3,6 +3,7 @@ import { Mp3Encoder } from "@breezystack/lamejs";
 import { masterPcm } from "./audio-levels.mjs";
 import { postNeural } from "./neural-http";
 import { speechBatches } from "./speech-batches";
+import { observeRender, estimateRender } from "./render-estimate";
 import { throwIfCancelled, waitForTurn, type GenerationControl } from "./generation-jobs";
 import {
   delivery,
@@ -56,8 +57,8 @@ export async function neuralStatus() {
     return (await response.json()) as {
       engines: Record<string, boolean>;
       device: string;
-      hardware?: { name: string; cpuThreads: number; batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number; reason?: string };
-      engineHardware?: Record<string, { batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number }>;
+      hardware?: { name: string; backend?: string; device?: string; cpuThreads: number; batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number; reason?: string };
+      engineHardware?: Record<string, { name?: string; backend?: string; device?: string; cpuThreads?: number; batchCharacters: number; maxScriptCharacters?: number; maxAudioSeconds?: number }>;
     };
   } catch {
     return {
@@ -127,12 +128,19 @@ async function neuralPart(input: SynthesisInput, control?: GenerationControl) {
 async function neuralSynthesize(input: SynthesisInput, control?: GenerationControl) {
   throwIfCancelled(control);
   control?.update({ stage: "Checking the local speech engine…" });
-  const status = input.text.length > 300 ? await neuralStatus() : undefined;
+  const status = await neuralStatus();
   const engineName = input.voice.split(":")[0];
   const hardware = status?.engineHardware?.[engineName] ?? status?.hardware;
   const budget = Math.max(40, Math.min(1200, hardware?.batchCharacters ?? 300));
   const maxAudio = Math.max(90, Math.min(1800, hardware?.maxAudioSeconds ?? 600));
   const batches = input.text.length > budget ? speechBatches(input.text, budget) : [input.text];
+  const estimateKey = JSON.stringify([input.voice, input.emotion, input.intensity, input.rate, input.pitch, hardware?.backend ?? hardware?.device ?? status.device, hardware?.name, hardware?.cpuThreads]);
+  let remainingCharacters = batches.reduce((sum, text) => sum + text.length, 0);
+  const updateEstimate = () => {
+    const estimate = estimateRender(estimateKey, remainingCharacters);
+    control?.update({ estimate: estimate ? { ...estimate, updated: Date.now() } : null });
+  };
+  updateEstimate();
   const buffers: Buffer[] = [];
   let sampleRate = 0, bytes = 0;
   let completed = 0;
@@ -143,9 +151,13 @@ async function neuralSynthesize(input: SynthesisInput, control?: GenerationContr
     const pauseTag = /\[pause (\d+(?:\.\d+)?)s\]/g;
     const onlyPauses = !text.replace(pauseTag, "").trim();
     const pauseSeconds = onlyPauses ? [...text.matchAll(pauseTag)].reduce((sum, m) => sum + Number(m[1]), 0) : 0;
+    const started = performance.now();
     const part = onlyPauses ? { buffer: Buffer.alloc(Math.round(pauseSeconds * 24000) * 2), sampleRate: 24000 }
       : await neuralPart({ ...input, text }, control);
     throwIfCancelled(control);
+    if (!onlyPauses) observeRender(estimateKey, text.length, (performance.now() - started) / 1000);
+    remainingCharacters -= text.length;
+    updateEstimate();
     if (sampleRate && sampleRate !== part.sampleRate) throw new Error("NEURAL: Audio sample rate changed between sections.");
     sampleRate = part.sampleRate;
     bytes += part.buffer.length;
@@ -155,7 +167,7 @@ async function neuralSynthesize(input: SynthesisInput, control?: GenerationContr
     control?.update({ completed, percent: Math.floor(completed / batches.length * 95) });
   }
   throwIfCancelled(control);
-  control?.update({ percent: 97, stage: "Preparing audio levels and download…" });
+  control?.update({ percent: 97, estimate: null, stage: "Preparing audio levels and download…" });
   const buffer = Buffer.concat(buffers);
   const pcm = new Int16Array(buffer.length / 2);
   for (let i = 0; i < pcm.length; i++) pcm[i] = buffer.readInt16LE(i * 2);

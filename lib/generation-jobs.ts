@@ -1,4 +1,4 @@
-export type JobProgress = { id: string; status: "running" | "cancelling" | "cancelled" | "complete" | "failed"; percent: number; stage: string; completed: number; total: number };
+export type JobProgress = { id: string; status: "running" | "cancelling" | "cancelled" | "complete" | "failed"; percent: number; stage: string; completed: number; total: number; estimate?: { low: number; high: number; samples: number; updated: number } | null };
 export type GenerationControl = { id: string; signal: AbortSignal; update: (progress: Partial<JobProgress>) => void };
 type Job = { progress: JobProgress; controller: AbortController; updated: number };
 const state = globalThis as typeof globalThis & { byteminusGenerationJobs?: Map<string, Job> };

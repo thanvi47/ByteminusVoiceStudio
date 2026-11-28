@@ -2308,3 +2308,7 @@ audio {
   .player-actions button { min-height: 44px; }
   .draft-toolbar { align-items: flex-start; flex-direction: column; }
 }
+.memory-status { margin: 10px 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 12px; }
+.memory-status p { margin: 6px 0 0; line-height: 1.6; opacity: .85; }
+.memory-warning { border-color: #d69a36; }
+.render-estimate { font-size: 13px; line-height: 1.7; }

@@ -1,5 +1,13 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.4
+
+- Added `Start-Studio.cmd`: double-click after setup to start the local app and open the browser when ready. Launcher checks missing web packages and broken Python environments before starting servers.
+
+- Studio displays approximate remaining time ranges from measured section rendering speed for matching voice/delivery/runtime settings. Initial requests learn first; overrunning estimates explicitly say recalculating. The process-local rolling measurements reset on server restart and do not store scripts or audio.
+- Added server OS free/total RAM display and a low-headroom warning. RAM readings are separate from dedicated GPU VRAM and do not claim a guaranteed speed-up from adding memory.
+- Verified 97 unit tests and four desktop/mobile draft, progress, estimate and RAM-warning browser checks.
+
 ## v0.2.3
 
 - Studio auto-saves scripts and voice settings locally, restores empty drafts and remembers the autoplay preference.

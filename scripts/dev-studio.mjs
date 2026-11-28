@@ -19,8 +19,18 @@ function run(command, args) {
   child.on("error", (e) => console.error(e.message));
   return child;
 }
+if (!existsSync(path.join(root, "node_modules/next/dist/bin/next"))) {
+  console.error("Web packages are missing. In this folder, run npm ci --legacy-peer-deps and wait for it to succeed before starting again.");
+  process.exit(1);
+}
 if (!existsSync(python)) {
   console.error("Neural Python environment is missing. Follow docs/NEURAL.md.");
+  process.exit(1);
+}
+const pythonCheck = spawnSync(path.resolve(python), ["-c", "import sys; print(sys.version_info.major)"], { cwd: root, encoding: "utf8", windowsHide: true });
+if (pythonCheck.status !== 0) {
+  console.error("Python environment could not start. If this folder was moved, rebuild the Python environments using the installation guide. Run ./scripts/setup.ps1 on Windows or bash scripts/setup.sh on macOS/Linux after repairing the environment.");
+  if (pythonCheck.stderr) console.error(pythonCheck.stderr.trim());
   process.exit(1);
 }
 try {
@@ -69,3 +79,20 @@ function shutdown() {
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+if (process.argv.includes("--open")) {
+  console.log("Keep this window open while using Studio. Press Ctrl+C here to stop it.");
+  for (let attempt = 0; attempt < 90; attempt++) {
+    try {
+      const response = await fetch("http://127.0.0.1:3000/api/health", { signal: AbortSignal.timeout(2000) });
+      if (response.ok) {
+        const opener = process.platform === "win32" ? "explorer.exe" : process.platform === "darwin" ? "open" : "xdg-open";
+        const browser = spawn(opener, ["http://127.0.0.1:3000"], { windowsHide: true, stdio: "ignore" });
+        browser.on("error", () => console.log("Open http://127.0.0.1:3000 in your browser."));
+        browser.unref();
+        break;
+      }
+    } catch { /* Wait for the web server, without opening an error page. */ }
+    if (attempt === 89) console.log("Browser not opened yet. Check the server log above, then visit http://127.0.0.1:3000.");
+    else await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}

@@ -45,6 +45,7 @@ import VoicePlayground from "./voice-playground";
 import AudioPlayer from "./audio-player";
 import RecordingHistory from "./recording-history";
 import { recordingTitle, MATURE_DIRECTION } from "@/lib/recording-title";
+import { remainingEstimate } from "@/lib/render-estimate";
 import { saveRecording, deleteRecording } from "@/lib/recording-history";
 type Clip = {
   id: string;
@@ -118,6 +119,8 @@ export default function Studio() {
   const [help, setHelp] = useState(false);
   const [progress, setProgress] = useState("");
   const [generationPercent, setGenerationPercent] = useState(0);
+  const [renderEstimate, setRenderEstimate] = useState<{ low: number; high: number; samples: number; updated: number } | null>(null);
+  const [memory, setMemory] = useState<{ totalGB: number; freeGB: number; pressure: "high" | "normal" } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const generationId = useRef<string | null>(null);
   const cancelRequested = useRef(false);
@@ -207,7 +210,7 @@ export default function Studio() {
     if (!auth) return;
     fetch("/api/tts/voices")
       .then((r) => r.json())
-      .then((d) => { setEngines(d.neural?.engines ?? {}); setHardware(d.neural?.hardware ?? null); setEngineHardware(d.neural?.engineHardware ?? {}); })
+      .then((d) => { setMemory(d.memory ?? null); setEngines(d.neural?.engines ?? {}); setHardware(d.neural?.hardware ?? null); setEngineHardware(d.neural?.engineHardware ?? {}); })
       .catch(() => {});
     fetch("/api/tts/usage")
       .then((r) => r.json())
@@ -220,6 +223,7 @@ export default function Studio() {
     if (!auth) return;
     const refresh = () => fetch("/api/tts/voices", { cache: "no-store" })
       .then((r) => r.json()).then((d) => {
+        setMemory(d.memory ?? null);
         setHardware(d.neural?.hardware ?? null);
         setEngineHardware(d.neural?.engineHardware ?? {});
       }).catch(() => {});
@@ -322,12 +326,15 @@ export default function Studio() {
     cancelRequested.current = false;
     cancelSent.current = false;
     setGenerationPercent(0);
+    setRenderEstimate(null);
     setCancelling(false);
     const timer = setInterval(async () => {
       try {
         const response = await fetch(`/api/tts/progress?id=${id}`, { cache: "no-store" });
         if (!response.ok || generationId.current !== id) return;
         const status = await response.json();
+        setRenderEstimate(status.estimate ?? null);
+        if (status.memory) setMemory(status.memory);
         setGenerationPercent(Math.max(0, Math.min(100, status.percent)));
         setProgress(status.stage);
         if (cancelRequested.current && !cancelSent.current && status.status === "running") await requestCancel();
@@ -483,6 +490,10 @@ export default function Studio() {
       : undefined;
   const generationControls = (
     <div className="editor-actions">
+      {memory && <div className={`memory-status ${memory.pressure === "high" ? "memory-warning" : ""}`}>
+        <strong>Server RAM: {memory.freeGB.toFixed(1)} GB free / {memory.totalGB.toFixed(1)} GB total</strong>
+        <p>{memory.pressure === "high" ? "Low free RAM: close unused apps. Memory pressure can cause disk paging, slower generation or failures." : "No low-RAM warning detected. More free RAM alone may not speed up generation; CPU/GPU and model performance also matter."} GPU VRAM is separate; integrated GPUs can share system RAM.</p>
+      </div>}
       <div className="draft-toolbar"><small role="status">{draftStatus}</small><label><input type="checkbox" checked={autoPlay} onChange={(e) => setAutoPlay(e.target.checked)} /> Play automatically when ready</label></div>
       <div className="generation-bar panel">
         <div className="format-control">
@@ -554,6 +565,13 @@ export default function Studio() {
             <button type="button" disabled={cancelling} onClick={() => void requestCancel()}>{cancelling ? "Cancelling…" : "Cancel generation"}</button>
           </div>
           <progress aria-label="Speech generation progress" max={100} value={generationPercent} />
+          {!cancelling && <p className="render-estimate" role="status">{(() => {
+            if (generationPercent >= 95) return "Finishing audio processing and download…";
+            if (!renderEstimate) return "Estimated time: learning this model's speed. An estimate appears after a section finishes or on a later generation.";
+            const remaining = remainingEstimate(renderEstimate.low, renderEstimate.high, renderEstimate.updated, Date.now());
+            const duration = (seconds: number) => seconds >= 60 ? `${Math.ceil(seconds / 60)} min` : `${seconds}s`;
+            return remaining ? `Approx. ${duration(remaining.low)}–${duration(remaining.high)} remaining · based on ${renderEstimate.samples} measured section(s). Model loading and memory pressure can change this.` : "Taking longer than estimated. Recalculating after the current section finishes…";
+          })()}</p>}
           <div className="progress">
           <span className="spin">
             <LoaderCircle size={16} />

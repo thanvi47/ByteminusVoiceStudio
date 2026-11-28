@@ -33,6 +33,12 @@ Expressive voices offer a **Mature · Warm & confident** direction preset with r
 
 ## Drafts, playback and generation progress
 
+**Windows one-click start:** after setup succeeds, double-click **Start-Studio.cmd** in the project folder. It starts Studio from that folder and opens the browser when the web server is ready. Keep its terminal window open; press Ctrl+C there to stop the servers. You can create a Desktop shortcut to the file (keep the launcher itself in the project folder). It does not install missing packages or repair environments moved from another path.
+
+Studio shows approximate remaining render time as a range calculated from up to eight measured sections for the same voice, delivery settings and detected runtime in the current server process. Before a matching measurement exists, it shows a learning message. Estimates update after each section; an overdue estimate explicitly says recalculating, never claims completion. Model loading, fallback, script complexity and memory pressure can change the result. This is not a guaranteed deadline.
+
+The RAM panel reports server OS free/total physical memory, not browser memory or dedicated GPU VRAM. It warns below 2 GiB or 10% of total RAM. Closing unused apps can help when memory is tight; additional free RAM does not establish a percentage speed-up or prove a RAM bottleneck. No memory telemetry leaves the local app.
+
 Studio automatically saves the script and voice settings in this browser after a short pause in editing, including an intentionally empty script. History supports searching titles/scripts/voices, filtering Studio/Playground/cloning recordings and renaming saved recordings. Audio players include five-second jumps, playback speed and volume controls, with touch-sized actions on mobile.
 
 New recordings try to play automatically when ready. Studio has a **Play automatically when ready** preference; browser autoplay restrictions may require pressing Play instead. History playback always starts manually. Generated audio is played after generation finishes, not streamed while the model is rendering.
