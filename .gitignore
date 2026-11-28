@@ -14,3 +14,4 @@ playwright-report/
 samples/
 .data/
 __pycache__/
+*.lnk

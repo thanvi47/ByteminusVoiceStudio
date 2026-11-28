@@ -1,5 +1,11 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.5
+
+- Added a distinctive purple waveform / green Play launcher icon, with native Windows shortcuts named START ByteminusVoiceStudio.
+- Double-click Create-Start-Icon.cmd once to create folder and Desktop shortcuts. Successful Windows setups create them automatically; Start-Studio.cmd refreshes the folder shortcut.
+- Shortcuts use the current project location. Rerun the shortcut creator after moving the folder. Generated user-specific .lnk files are excluded from Git; the SVG, multi-resolution ICO and dependency-free Windows icon builder are included.
+
 ## v0.2.4
 
 - Added `Start-Studio.cmd`: double-click after setup to start the local app and open the browser when ready. Launcher checks missing web packages and broken Python environments before starting servers.

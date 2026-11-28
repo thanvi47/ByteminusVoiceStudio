@@ -44,4 +44,6 @@ Invoke-Step 'Check installation' {
     if ($All) { & npm.cmd run doctor -- --all } else { & npm.cmd run doctor }
     if ($LASTEXITCODE -ne 0) { throw 'Installation checks failed. Follow the missing-package/model instructions above.' }
 }
-Write-Host "`nSetup checks passed. Run npm run dev, keep the terminal open, then visit http://127.0.0.1:3000."
+try { & "$PSScriptRoot/create-shortcuts.ps1" -Desktop }
+catch { Write-Warning "Setup passed, but shortcuts could not be created: $($_.Exception.Message). You can still use Start-Studio.cmd." }
+Write-Host "`nSetup checks passed. Double-click START ByteminusVoiceStudio on your Desktop or in this folder. Keep its terminal open while using the app."
