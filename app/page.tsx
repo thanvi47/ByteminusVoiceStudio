@@ -35,6 +35,7 @@ import {
   srt,
   voices,
   synthesisKey,
+  inputSchema,
   type SynthesisInput,
 } from "@/lib/script";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
@@ -86,6 +87,9 @@ const sections = [
 export default function Studio() {
   const [section, setSection] = useState<string>("Voice studio");
   const [text, setText] = useState(sample);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState("");
+  const [autoPlay, setAutoPlay] = useState(true);
   const [voice, setVoice] = useState<SynthesisInput["voice"]>("mithi:charvi");
   const [language, setLanguage] = useState("bn");
   const [gender, setGender] = useState("All");
@@ -113,6 +117,11 @@ export default function Studio() {
   const [usage, setUsage] = useState({ characters: 0, requests: 0, failed: 0 });
   const [help, setHelp] = useState(false);
   const [progress, setProgress] = useState("");
+  const [generationPercent, setGenerationPercent] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
+  const generationId = useRef<string | null>(null);
+  const cancelRequested = useRef(false);
+  const cancelSent = useRef(false);
   const [advanced, setAdvanced] = useState(false);
   const [dialogue, setDialogue] = useState(false);
   const [style, setStyle] = useState("");
@@ -142,11 +151,41 @@ export default function Studio() {
       if (saved) setProjects(JSON.parse(saved));
       const draft = localStorage.getItem("byteminus.draft");
       if (draft) setText(draft);
-    } catch {}
+      const settings = localStorage.getItem("byteminus.draft.v2");
+      if (settings) {
+        const saved = JSON.parse(settings);
+        const result = inputSchema.safeParse({ ...saved, text: saved.text || "Draft" });
+        if (result.success) {
+          const d = result.data;
+          setText(typeof saved.text === "string" ? saved.text : sample);
+          setVoice(d.voice); setLanguage(voices.find((v) => v.id === d.voice)?.language ?? "bn");
+          setEmotion(d.emotion); setIntensity(d.intensity); setRate(d.rate); setPitch(d.pitch);
+          setOutputGain(d.outputGain); setNormalizeAudio(d.normalizeAudio); setFormat(d.format); setStyle(d.style ?? "");
+          setAutoDelivery(saved.autoDelivery !== false); setDialogue(saved.dialogue === true);
+          setAutoPlay(saved.autoPlay !== false);
+          setDraftStatus("Draft restored");
+        }
+      }
+    } catch { setDraftStatus("Saved draft could not be restored"); }
+    setDraftReady(true);
     return () => {
+      if (generationId.current) void fetch(`/api/tts/cancel?id=${generationId.current}`, { method: "POST", keepalive: true });
       clipsRef.current.forEach((c) => URL.revokeObjectURL(c.url));
     };
   }, []);
+  useEffect(() => {
+    if (!draftReady) return;
+    const persist = () => {
+      try {
+        localStorage.setItem("byteminus.draft.v2", JSON.stringify({ text, voice, emotion, intensity, rate, pitch, outputGain, normalizeAudio, format, style, autoDelivery, dialogue, autoPlay }));
+        setDraftStatus("Draft saved on this browser");
+      } catch { setDraftStatus("Auto-save unavailable. Copy your script before leaving."); }
+    };
+    setDraftStatus("Saving draft…");
+    const timer = setTimeout(persist, 400);
+    window.addEventListener("pagehide", persist);
+    return () => { clearTimeout(timer); window.removeEventListener("pagehide", persist); };
+  }, [draftReady, text, voice, emotion, intensity, rate, pitch, outputGain, normalizeAudio, format, style, autoDelivery, dialogue, autoPlay]);
   useEffect(() => {
     fetch("/voice-previews/v1/manifest.json", { cache: "no-cache" })
       .then((r) => {
@@ -278,6 +317,22 @@ export default function Studio() {
     if (!source.trim() || busy) return;
     setBusy(true);
     setError("");
+    const id = crypto.randomUUID();
+    generationId.current = id;
+    cancelRequested.current = false;
+    cancelSent.current = false;
+    setGenerationPercent(0);
+    setCancelling(false);
+    const timer = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/tts/progress?id=${id}`, { cache: "no-store" });
+        if (!response.ok || generationId.current !== id) return;
+        const status = await response.json();
+        setGenerationPercent(Math.max(0, Math.min(100, status.percent)));
+        setProgress(status.stage);
+        if (cancelRequested.current && !cancelSent.current && status.status === "running") await requestCancel();
+      } catch { /* Keep the generation connection active through transient polling failures. */ }
+    }, 750);
     const requestedVoice = (overrideVoice ?? voice) as SynthesisInput["voice"];
     const requestInput = {
       text: source,
@@ -299,7 +354,7 @@ export default function Studio() {
     try {
       const r = await fetch("/api/tts/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Generation-ID": id },
         body: JSON.stringify(requestInput),
       });
       if (!r.ok) {
@@ -309,6 +364,8 @@ export default function Studio() {
       }
       setProgress("Preparing audio preview…");
       const blob = await r.blob();
+      if (cancelRequested.current) throw new Error("GENERATION_CANCELLED");
+      setGenerationPercent(100);
       const clip: Clip = {
         id: crypto.randomUUID(),
         name: recordingTitle(source),
@@ -335,13 +392,28 @@ export default function Studio() {
           duration: clip.duration, created: clip.created, subtitles: clip.subtitles, audio: blob, source: "studio" });
       } catch { setNotice("Audio is ready, but history could not be saved. Download this recording now."); }
     } catch (e) {
-      setError(
+      if (cancelRequested.current || (e instanceof Error && e.message === "Generation cancelled.")) setNotice("Generation cancelled. No partial recording was saved.");
+      else setError(
         e instanceof Error ? e.message : "Generation failed. Please retry.",
       );
     } finally {
+      clearInterval(timer);
+      generationId.current = null;
+      setCancelling(false);
       setBusy(false);
       setProgress("");
     }
+  }
+  async function requestCancel() {
+    const id = generationId.current;
+    if (!id) return;
+    cancelRequested.current = true;
+    setCancelling(true);
+    setProgress("Cancelling… waiting for the model to stop.");
+    try {
+      const response = await fetch(`/api/tts/cancel?id=${id}`, { method: "POST" });
+      cancelSent.current = response.ok;
+    } catch { cancelSent.current = false; }
   }
   function insertPause() {
     const el = input.current;
@@ -411,6 +483,7 @@ export default function Studio() {
       : undefined;
   const generationControls = (
     <div className="editor-actions">
+      <div className="draft-toolbar"><small role="status">{draftStatus}</small><label><input type="checkbox" checked={autoPlay} onChange={(e) => setAutoPlay(e.target.checked)} /> Play automatically when ready</label></div>
       <div className="generation-bar panel">
         <div className="format-control">
           <span>Export format</span>
@@ -475,12 +548,20 @@ export default function Studio() {
         </p>
       )}
       {busy && (
-        <div role="status" className="progress">
+        <div className="generation-progress">
+          <div className="generation-progress-heading">
+            <span role="status">{cancelling ? "Cancelling…" : `${generationPercent}% complete`} · {elapsed}s</span>
+            <button type="button" disabled={cancelling} onClick={() => void requestCancel()}>{cancelling ? "Cancelling…" : "Cancel generation"}</button>
+          </div>
+          <progress aria-label="Speech generation progress" max={100} value={generationPercent} />
+          <div className="progress">
           <span className="spin">
             <LoaderCircle size={16} />
           </span>
           {progress} {elapsed}s
           {elapsed >= 240 && <span> · দীর্ঘ script অংশে অংশে তৈরি হচ্ছে; CPU-তে অনেক সময় লাগতে পারে। আবার Generate চাপবেন না।</span>}
+          </div>
+          <small>Progress follows completed text sections and final preparation, not elapsed time. A model operation may take time without changing the percentage.</small>
         </div>
       )}
     </div>
@@ -533,28 +614,13 @@ export default function Studio() {
             key={active.id}
             src={active.url}
             preload="metadata"
+            autoPlay={autoPlay}
             onPlay={() => {
               sampleAudio.current?.pause();
               setPlayingSample(null);
             }}
           />
           <div className="player-actions">
-            <label>
-              Playback speed
-              <select
-                aria-label="Playback speed"
-                onChange={(e) => {
-                  if (audio.current)
-                    audio.current.playbackRate = +e.target.value;
-                }}
-                defaultValue="1"
-              >
-                <option value="0.75">0.75×</option>
-                <option value="1">1×</option>
-                <option value="1.25">1.25×</option>
-                <option value="1.5">1.5×</option>
-              </select>
-            </label>
             <button
               onClick={() =>
                 download(

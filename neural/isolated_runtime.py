@@ -7,6 +7,7 @@ from pathlib import Path
 from queue import Queue, Empty
 import subprocess
 import threading
+import time
 
 
 class PersistentWorker:
@@ -51,7 +52,7 @@ class PersistentWorker:
                 pass
         threading.Thread(target=drain, daemon=True).start()
 
-    def request(self, data, *, backend="directml", timeout=1200):
+    def request(self, data, *, backend="directml", timeout=1200, cancel_event=None):
         with self.lock:
             self._start()
             process = self.process
@@ -74,7 +75,17 @@ class PersistentWorker:
                     result.put(exc)
             threading.Thread(target=exchange, daemon=True).start()
             try:
-                response = result.get(timeout=timeout)
+                deadline = time.monotonic() + timeout
+                while True:
+                    if cancel_event is not None and cancel_event.is_set():
+                        raise RuntimeError("GENERATION_CANCELLED")
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0: raise Empty()
+                    try:
+                        response = result.get(timeout=min(0.2, remaining))
+                        break
+                    except Empty:
+                        if time.monotonic() >= deadline: raise
                 if isinstance(response, Exception): raise response
                 return response
             except Empty:

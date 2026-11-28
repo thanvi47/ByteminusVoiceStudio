@@ -34,6 +34,10 @@ CATALOG = {
     )
 }
 lock = threading.Lock()
+cancel_event = threading.Event()
+generation_state_lock = threading.Lock()
+active_generation = None
+pending_cancellations = {}
 loaded = {}
 PARLER_PYTHON = (
     ROOT
@@ -86,6 +90,29 @@ class Input(BaseModel):
     style: str = Field(default="", max_length=1200)
     deliveryRate: float = Field(default=1, ge=0.7, le=1.3)
     deliveryPitch: float = Field(default=1, ge=0.7, le=1.3)
+    generationId: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+class CancelInput(BaseModel):
+    generationId: str = Field(pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+def check_cancelled():
+    if cancel_event.is_set(): raise HTTPException(499, "Generation cancelled.")
+
+
+@app.post("/cancel")
+def cancel_generation(data: CancelInput):
+    with generation_state_lock:
+        if active_generation == data.generationId:
+            cancel_event.set()
+            return {"cancelling": True}
+        now = time.monotonic()
+        for key, created in list(pending_cancellations.items()):
+            if now-created > 120: pending_cancellations.pop(key, None)
+        if len(pending_cancellations) >= 256: raise HTTPException(429, "Too many pending cancellations")
+        pending_cancellations[data.generationId] = now
+        return {"cancelling": False}
 
 
 @app.middleware("http")
@@ -239,7 +266,7 @@ def render(data):
         EXPRESSIVE_WORKER.close()
         release_main_models()
         script_parts(data.text)
-        output, actual = DIRECTML_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"))
+        output, actual = DIRECTML_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event)
         ENGINE_HARDWARE[engine] = actual
         if actual["device"] == "cpu": DIRECTML_WORKER.close()
         return output, 24000
@@ -247,7 +274,7 @@ def render(data):
         DIRECTML_WORKER.close()
         release_main_models()
         script_parts(data.text)
-        output, actual = EXPRESSIVE_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"))
+        output, actual = EXPRESSIVE_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"), cancel_event=cancel_event)
         ENGINE_HARDWARE[engine] = actual
         return output, 24000
     DIRECTML_WORKER.close()
@@ -256,6 +283,7 @@ def render(data):
     chunks = []
     length = 0
     for part in script_parts(data.text):
+        check_cancelled()
         if isinstance(part, float):
             audio = np.zeros(round(part * 24000), dtype=np.float32)
         elif not part.strip():
@@ -315,6 +343,7 @@ def render(data):
 
 @app.post("/synthesize")
 def synthesize(data: Input):
+    global active_generation
     if data.voice not in CATALOG:
         raise HTTPException(400, "Unknown voice")
     if CATALOG[data.voice]["language"].startswith("en") and re.search(
@@ -329,16 +358,25 @@ def synthesize(data: Input):
         raise HTTPException(429, "Local neural engine is busy.")
     started = time.monotonic()
     try:
+        with generation_state_lock:
+            active_generation = data.generationId
+            cancel_event.clear()
+            if data.generationId in pending_cancellations:
+                pending_cancellations.pop(data.generationId)
+                cancel_event.set()
+        check_cancelled()
         engine = CATALOG[data.voice]["engine"]
         try:
             pcm, sr = render(data)
         except (RuntimeError, NotImplementedError) as exc:
+            check_cancelled()
             if ENGINE_HARDWARE[engine]["device"] == "cpu" or os.environ.get("BYTEMINUS_DEVICE", "auto") != "auto": raise
             profile = ENGINE_HARDWARE[engine]
             loaded.pop(engine, None)
             gc.collect()
             ENGINE_HARDWARE[engine] = cpu_fallback(torch, profile, exc, engine=engine)
             pcm, sr = render(data)
+        check_cancelled()
         ENGINE_HARDWARE[engine]["validation"] = "speech generated"
         print(
             f"{data.voice}: {len(pcm) / (2 * sr):.2f}s audio in {time.monotonic() - started:.2f}s",
@@ -363,4 +401,7 @@ def synthesize(data: Input):
             503, "Neural generation failed. Check the local server log."
         ) from exc
     finally:
+        with generation_state_lock:
+            active_generation = None
+            cancel_event.clear()
         lock.release()

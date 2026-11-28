@@ -48,5 +48,18 @@ class WorkerTests(unittest.TestCase):
         self.assertIsNone(self.worker.process)
         self.assertEqual(self.worker.request({})[0], b"1234")
 
+    def test_cancellation_stops_process_and_allows_a_new_request(self):
+        import threading
+        event = threading.Event()
+        timer = threading.Timer(0.2, event.set)
+        timer.start()
+        try:
+            with self.assertRaisesRegex(RuntimeError, "GENERATION_CANCELLED"):
+                self.worker.request({"slow": True}, cancel_event=event)
+        finally:
+            timer.cancel()
+        self.assertIsNone(self.worker.process)
+        self.assertEqual(self.worker.request({})[0], b"1234")
+
 
 if __name__ == "__main__": unittest.main()

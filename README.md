@@ -31,6 +31,14 @@ Recordings and WAV/MP3/SRT filenames use the first six script words, followed by
 
 Expressive voices offer a **Mature · Warm & confident** direction preset with rich texture, gentle breathing and natural rhythm. It is guidance to the model, not a guarantee of human-like acting or added breathing effects.
 
+## Drafts, playback and generation progress
+
+Studio automatically saves the script and voice settings in this browser after a short pause in editing, including an intentionally empty script. History supports searching titles/scripts/voices, filtering Studio/Playground/cloning recordings and renaming saved recordings. Audio players include five-second jumps, playback speed and volume controls, with touch-sized actions on mobile.
+
+New recordings try to play automatically when ready. Studio has a **Play automatically when ready** preference; browser autoplay restrictions may require pressing Play instead. History playback always starts manually. Generated audio is played after generation finishes, not streamed while the model is rendering.
+
+Studio shows completed-section progress and a **Cancel generation** button. The percentage counts finished text sections and preparation stages; it is not a time estimate, so it can stay still during model loading or a long section. Isolated workers are stopped on cancellation; native operations finish their current operation before cancellation is acknowledged. Cancelled recordings are not added to history. Clients can supply a UUID in `X-Generation-ID` on `POST /api/tts/generate`, poll `GET /api/tts/progress?id=UUID` and cancel with `POST /api/tts/cancel?id=UUID`; the existing authentication and same-origin protections apply. Job metadata expires after 30 minutes of inactivity for finished jobs.
+
 ## Voices and delivery
 
 | Engine | Profiles | Language | Controls |

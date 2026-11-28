@@ -3,6 +3,7 @@ import { Mp3Encoder } from "@breezystack/lamejs";
 import { masterPcm } from "./audio-levels.mjs";
 import { postNeural } from "./neural-http";
 import { speechBatches } from "./speech-batches";
+import { throwIfCancelled, waitForTurn, type GenerationControl } from "./generation-jobs";
 import {
   delivery,
   escapeXML,
@@ -16,6 +17,7 @@ export interface TTSProvider {
   getCapabilities(): object;
   synthesize(
     input: SynthesisInput,
+    control?: GenerationControl,
   ): Promise<{ audio: Buffer; duration: number; peaks: number[] }>;
 }
 export function wav(pcm: Int16Array, sampleRate = 22050) {
@@ -77,7 +79,7 @@ export function encode(
   chunks.push(Buffer.from(encoder.flush()));
   return Buffer.concat(chunks);
 }
-async function neuralPart(input: SynthesisInput) {
+async function neuralPart(input: SynthesisInput, control?: GenerationControl) {
   // Neural emotion comes from a model prompt, never a synthetic pitch/speed effect.
   // Natural engines ignore emotion; explicit manual sliders remain available.
   let response: Response;
@@ -92,6 +94,7 @@ async function neuralPart(input: SynthesisInput) {
         style: input.style,
         deliveryRate: 1,
         deliveryPitch: 1,
+        generationId: control?.id,
       }));
   } catch (error) {
     const code = (error as NodeJS.ErrnoException)?.code;
@@ -121,7 +124,9 @@ async function neuralPart(input: SynthesisInput) {
     throw new Error("AUDIO_LIMIT");
   return { buffer, sampleRate };
 }
-async function neuralSynthesize(input: SynthesisInput) {
+async function neuralSynthesize(input: SynthesisInput, control?: GenerationControl) {
+  throwIfCancelled(control);
+  control?.update({ stage: "Checking the local speech engine…" });
   const status = input.text.length > 300 ? await neuralStatus() : undefined;
   const engineName = input.voice.split(":")[0];
   const hardware = status?.engineHardware?.[engineName] ?? status?.hardware;
@@ -130,18 +135,27 @@ async function neuralSynthesize(input: SynthesisInput) {
   const batches = input.text.length > budget ? speechBatches(input.text, budget) : [input.text];
   const buffers: Buffer[] = [];
   let sampleRate = 0, bytes = 0;
+  let completed = 0;
+  control?.update({ total: batches.length, completed: 0 });
   for (const text of batches) {
+    throwIfCancelled(control);
+    control?.update({ stage: `Rendering section ${completed + 1} of ${batches.length}. First use may load the model…` });
     const pauseTag = /\[pause (\d+(?:\.\d+)?)s\]/g;
     const onlyPauses = !text.replace(pauseTag, "").trim();
     const pauseSeconds = onlyPauses ? [...text.matchAll(pauseTag)].reduce((sum, m) => sum + Number(m[1]), 0) : 0;
     const part = onlyPauses ? { buffer: Buffer.alloc(Math.round(pauseSeconds * 24000) * 2), sampleRate: 24000 }
-      : await neuralPart({ ...input, text });
+      : await neuralPart({ ...input, text }, control);
+    throwIfCancelled(control);
     if (sampleRate && sampleRate !== part.sampleRate) throw new Error("NEURAL: Audio sample rate changed between sections.");
     sampleRate = part.sampleRate;
     bytes += part.buffer.length;
     if (bytes > maxAudio * sampleRate * 2) throw new Error("AUDIO_LIMIT");
     buffers.push(part.buffer);
+    completed++;
+    control?.update({ completed, percent: Math.floor(completed / batches.length * 95) });
   }
+  throwIfCancelled(control);
+  control?.update({ percent: 97, stage: "Preparing audio levels and download…" });
   const buffer = Buffer.concat(buffers);
   const pcm = new Int16Array(buffer.length / 2);
   for (let i = 0; i < pcm.length; i++) pcm[i] = buffer.readInt16LE(i * 2);
@@ -200,18 +214,20 @@ export const provider: TTSProvider = {
     sampleRates: [22050, 24000],
     accentNote: "Bengali is generic; no verified Bangladesh or India accent.",
   }),
-  async synthesize(input) {
+  async synthesize(input, control) {
     if (waiting >= 3) throw new Error("BUSY");
     waiting++;
     const previous = queue;
     let release!: () => void;
-    queue = new Promise<void>((r) => {
+    const turn = new Promise<void>((r) => {
       release = r;
     });
-    await previous;
+    queue = previous.then(() => turn);
     try {
+      await waitForTurn(previous, control);
+      throwIfCancelled(control);
       const parsed = parseScript(input.text);
-      if (input.voice.includes(":")) return await neuralSynthesize(input);
+      if (input.voice.includes(":")) return await neuralSynthesize(input, control);
       engine ??= init()
         .then(async (m) => new m.eSpeakNGWorker())
         .catch((e) => {
@@ -230,7 +246,10 @@ export const provider: TTSProvider = {
         if (samplesWritten > 90 * 22050) throw new Error("AUDIO_LIMIT");
         chunks.push(chunk);
       };
+      let completed = 0;
       for (const part of parsed) {
+        throwIfCancelled(control);
+        control?.update({ total: parsed.length, stage: "Rendering legacy speech sections…" });
         if (part.pause !== undefined)
           append(new Int16Array(Math.round(part.pause * 22050)));
         else if (part.text?.trim()) {
@@ -245,8 +264,12 @@ export const provider: TTSProvider = {
           });
           if (exceeded) throw new Error("AUDIO_LIMIT");
         }
+        completed++;
+        control?.update({ completed, percent: Math.floor(completed / parsed.length * 95) });
       }
       const length = chunks.reduce((a, c) => a + c.length, 0);
+      throwIfCancelled(control);
+      control?.update({ percent: 97, stage: "Preparing audio levels and download…" });
       if (!length) throw new Error("EMPTY_AUDIO");
       const pcm = new Int16Array(length);
       let offset = 0;
@@ -284,7 +307,7 @@ export const provider: TTSProvider = {
       usage.requests++;
       return { audio, duration: length / 22050, peaks };
     } catch (e) {
-      usage.failed++;
+      if (!(e instanceof Error && e.message === "GENERATION_CANCELLED")) usage.failed++;
       throw e;
     } finally {
       waiting--;

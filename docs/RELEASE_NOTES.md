@@ -1,5 +1,13 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.3
+
+- Studio auto-saves scripts and voice settings locally, restores empty drafts and remembers the autoplay preference.
+- History adds title/script/voice search, source filters and persistent renaming. Players add five-second jumps and speed controls, with improved mobile touch targets and wrapping.
+- Newly generated Studio, Playground and cloned audio attempts automatic playback after completion. Browser policy may require pressing Play; saved history never autoplays.
+- Studio now reports completed-section generation progress and supports cancellation through the queue and Python workers. Percentages are work progress, not elapsed-time estimates. Native operations acknowledge cancellation after their current operation; cancelled audio is not saved.
+- Validated with 93 unit tests, 22 Python server/worker tests, eight desktop/mobile browser checks and a production build.
+
 ## v0.2.2
 
 - Recording/project titles and audio/SRT filenames use the first six script words plus `bn` or `en`.

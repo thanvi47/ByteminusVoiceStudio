@@ -2,14 +2,21 @@ import { authenticated, error, rateLimit, sameOrigin } from "@/lib/auth";
 import { inputSchema, parseScript, voices } from "@/lib/script";
 import { provider, usage, neuralStatus } from "@/lib/tts";
 import { ZodError } from "zod";
+import { createJob, getJob, cancelJob, validJobId, throwIfCancelled } from "@/lib/generation-jobs";
 export const runtime = "nodejs";
 export const maxDuration = 14400;
 export async function GET(
-  _: Request,
+  request: Request,
   ctx: { params: Promise<{ action: string }> },
 ) {
   if (!(await authenticated())) return error("Please sign in.", 401);
   const { action } = await ctx.params;
+  if (action === "progress") {
+    const id = new URL(request.url).searchParams.get("id") ?? "";
+    if (!validJobId(id)) return error("Invalid generation ID.", 400);
+    const job = getJob(id);
+    return job ? Response.json(job, { headers: { "Cache-Control": "no-store" } }) : error("Generation not found.", 404);
+  }
   if (action === "voices")
     return Response.json(
       {
@@ -37,7 +44,14 @@ export async function POST(
 ) {
   if (!(await authenticated())) return error("Please sign in.", 401);
   if (!sameOrigin(request)) return error("Origin not allowed.", 403);
-  if ((await ctx.params).action !== "generate") return error("Not found.", 404);
+  const { action } = await ctx.params;
+  if (action === "cancel") {
+    const id = new URL(request.url).searchParams.get("id") ?? "";
+    if (!validJobId(id)) return error("Invalid generation ID.", 400);
+    const job = await cancelJob(id);
+    return job ? Response.json(job) : error("Generation not found.", 404);
+  }
+  if (action !== "generate") return error("Not found.", 404);
   if (!rateLimit("synthesis", 12))
     return error("Please wait a minute before generating again.", 429);
   if (Number(request.headers.get("content-length") ?? 0) > 80000)
@@ -65,8 +79,17 @@ export async function POST(
           : "Invalid request.",
     );
   }
+  const id = request.headers.get("X-Generation-ID") ?? crypto.randomUUID();
+  if (!validJobId(id)) return error("Invalid generation ID.", 400);
+  let control;
+  try { control = createJob(id); } catch { return error("Generation ID already used or studio busy.", 409); }
+  const abort = () => { void cancelJob(id); };
+  request.signal.addEventListener("abort", abort, { once: true });
+  if (request.signal.aborted) abort();
   try {
-    const { audio, duration, peaks } = await provider.synthesize(input);
+    const { audio, duration, peaks } = await provider.synthesize(input, control);
+    throwIfCancelled(control);
+    control.update({ status: "complete", percent: 100, stage: "Audio ready." });
     return new Response(new Uint8Array(audio), {
       headers: {
         "Content-Type": input.format === "wav" ? "audio/wav" : "audio/mpeg",
@@ -77,6 +100,11 @@ export async function POST(
       },
     });
   } catch (e) {
+    if (control.signal.aborted || (e instanceof Error && e.message === "GENERATION_CANCELLED")) {
+      control.update({ status: "cancelled", stage: "Generation cancelled." });
+      return error("Generation cancelled.", 499);
+    }
+    control.update({ status: "failed", stage: "Generation failed." });
     console.error(
       "Synthesis failed:",
       e instanceof Error ? e.message : "unknown",
@@ -100,5 +128,5 @@ export async function POST(
         : "Speech generation failed. Please retry.",
       503,
     );
-  }
+  } finally { request.signal.removeEventListener("abort", abort); }
 }

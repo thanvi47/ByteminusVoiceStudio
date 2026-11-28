@@ -548,7 +548,7 @@ export default function VoiceCloning() {
             <strong>
               {result.title} · {result.profile} · {result.duration.toFixed(1)}s
             </strong>
-            <AudioPlayer key={result.url} src={result.url} />
+            <AudioPlayer key={result.url} src={result.url} autoPlay />
             <div className="clone-times">
               <button
                 onClick={() =>

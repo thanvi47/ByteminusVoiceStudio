@@ -11,16 +11,22 @@ export default function AudioPlayer({
   audioRef,
   onPlay,
   preload = "metadata",
+  autoPlay = false,
 }: {
   src: string;
   audioRef?: Ref<HTMLAudioElement>;
   onPlay?: () => void;
   preload?: "none" | "metadata" | "auto";
+  autoPlay?: boolean;
 }) {
   const element = useRef<HTMLAudioElement | null>(null),
     graph = useRef<Graph | null>(null);
   const [volume, setVolume] = useState(1),
     [error, setError] = useState("");
+  useEffect(() => {
+    if (!autoPlay) return;
+    void element.current?.play().catch(() => setError("Your audio is ready. This browser needs you to press Play to listen."));
+  }, [src, autoPlay]);
   useEffect(
     () => () => {
       const g = graph.current;
@@ -84,6 +90,13 @@ export default function AudioPlayer({
           onPlay?.();
         }}
       />
+      <div className="audio-tools">
+        <button type="button" onClick={() => { const p = element.current; if (p) p.currentTime = Math.max(0, p.currentTime - 5); }}>−5 seconds</button>
+        <button type="button" onClick={() => { const p = element.current; if (p && Number.isFinite(p.duration)) p.currentTime = Math.min(p.duration, p.currentTime + 5); }}>+5 seconds</button>
+        <label>Speed <select aria-label="Audio playback speed" defaultValue="1" onChange={(e) => { if (element.current) element.current.playbackRate = Number(e.target.value); }}>
+          {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => <option key={speed} value={speed}>{speed}×</option>)}
+        </select></label>
+      </div>
       <label>
         Playback volume <span>{Math.round(volume * 100)}%</span>
         <input

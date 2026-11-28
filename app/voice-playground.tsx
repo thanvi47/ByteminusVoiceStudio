@@ -903,6 +903,7 @@ export default function VoicePlayground({
                   speed · {t.input.pitch.toFixed(2)}× pitch
                 </p>
                 <AudioPlayer
+                  autoPlay={i === 0}
                   audioRef={(el) => {
                     players.current[i] = el;
                   }}

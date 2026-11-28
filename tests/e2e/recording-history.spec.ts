@@ -16,6 +16,13 @@ function waveFixture() {
 }
 
 test("saved audio survives reload with a script title and can be downloaded and deleted", async ({ page }) => {
+  await page.addInitScript(() => {
+    const play = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      this.dataset.playAttempted = "true";
+      return play.call(this);
+    };
+  });
   const samples = waveFixture();
   await page.route("**/api/tts/generate", (route) => route.fulfill({ status: 200, contentType: "audio/wav", body: samples,
     headers: { "X-Audio-Duration": "0.2", "X-Audio-Peaks": "[]" } }));
@@ -23,8 +30,14 @@ test("saved audio survives reload with a script title and can be downloaded and 
   await page.getByRole("textbox", { name: "Script", exact: true }).fill("আজ একটি নতুন দিন।");
   await page.getByRole("button", { name: /Generate voice \+ SRT/ }).click();
   await expect(page.getByRole("heading", { name: "আজ একটি নতুন দিন bn", exact: true })).toBeVisible();
+  await expect(page.locator(".volume-player audio")).toHaveAttribute("data-play-attempted", "true");
+  await page.getByRole("combobox", { name: "Audio playback speed", exact: true }).selectOption("1.5");
+  expect(await page.locator(".volume-player audio").evaluate((audio: HTMLAudioElement) => audio.playbackRate)).toBe(1.5);
   await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByRole("heading", { name: "আজ একটি নতুন দিন bn", exact: true })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search recordings" }).fill("missing recording");
+  await expect(page.getByText("No matching recordings.")).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search recordings" }).fill("");
   await page.locator("audio").last().evaluate(async (audio: HTMLAudioElement) => { await audio.play(); });
   await page.reload();
   await page.getByRole("button", { name: "History", exact: true }).click();
@@ -35,7 +48,14 @@ test("saved audio survives reload with a script title and can be downloaded and 
   const subtitles = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download SRT", exact: true }).click();
   expect((await subtitles).suggestedFilename()).toBe("আজ একটি নতুন দিন bn.srt");
-  await page.getByRole("button", { name: "Delete আজ একটি নতুন দিন bn", exact: true }).click();
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await page.getByRole("textbox", { name: "Recording name" }).fill("My renamed story bn");
+  await page.getByRole("button", { name: "Save name", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My renamed story bn", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: "Delete My renamed story bn", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No saved recordings yet." })).toBeVisible();
 });
 

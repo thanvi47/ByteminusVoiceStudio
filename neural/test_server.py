@@ -186,6 +186,36 @@ class ProtocolTests(unittest.TestCase):
             self.client.post("/synthesize", content="x" * 20001).status_code, 413
         )
 
+    def test_cancel_before_start_does_not_render(self):
+        from unittest.mock import patch
+        from neural import server
+        job = "11111111-1111-4111-8111-111111111111"
+        self.assertEqual(self.client.post("/cancel", json={"generationId": job}).status_code, 200)
+        with patch.object(server, "render") as render:
+            response = self.client.post("/synthesize", json={"voice": "mithi:charvi", "text": "Hello", "generationId": job})
+            self.assertEqual(response.status_code, 499)
+            render.assert_not_called()
+        self.assertFalse(server.lock.locked())
+
+    def test_cancel_active_request_does_not_retry_on_cpu(self):
+        from unittest.mock import patch
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        from neural import server
+        job = "22222222-2222-4222-8222-222222222222"
+        started = threading.Event()
+        def rendering(data):
+            started.set()
+            self.assertTrue(server.cancel_event.wait(5))
+            raise RuntimeError("worker stopped")
+        with patch.object(server, "render", side_effect=rendering) as render, ThreadPoolExecutor(max_workers=1) as pool:
+            result = pool.submit(self.client.post, "/synthesize", json={"voice": "mithi:charvi", "text": "Hello", "generationId": job})
+            self.assertTrue(started.wait(5))
+            self.client.post("/cancel", json={"generationId": job})
+            self.assertEqual(result.result(timeout=5).status_code, 499)
+            self.assertEqual(render.call_count, 1)
+        self.assertFalse(server.lock.locked())
+
     def test_validate_neural_input(self):
         self.assertEqual(
             self.client.post(
