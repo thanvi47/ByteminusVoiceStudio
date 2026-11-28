@@ -1,7 +1,8 @@
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 const root = process.cwd();
+const version = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).version;
 const mode = process.argv.includes("--production") ? "start" : "dev";
 const python =
   process.platform === "win32"
@@ -27,6 +28,11 @@ try {
     signal: AbortSignal.timeout(1000),
   });
   if (!r.ok) throw new Error();
+  const status = await r.json();
+  if (status.runtimeVersion !== version) {
+    console.error("An older neural server is still running. Stop the studio, run ./scripts/stop-neural.ps1 on Windows, then start npm run dev again.");
+    process.exit(1);
+  }
   console.log("Using existing local neural server.");
 } catch {
   run(path.resolve(python), [
@@ -54,7 +60,11 @@ try {
   ]);
 }
 function shutdown() {
-  for (const child of children) child.kill();
+  for (const child of children) {
+    if (process.platform === "win32" && child.pid) {
+      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+    } else child.kill();
+  }
   process.exit();
 }
 process.on("SIGINT", shutdown);

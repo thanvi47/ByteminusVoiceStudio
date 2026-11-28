@@ -15,11 +15,13 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run typecheck
-      - run: python -m unittest neural.test_hardware
+      - run: python -m unittest neural.test_hardware neural.test_isolated_runtime
       - shell: pwsh
         run: |
           $errors = $null
           $tokens = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/setup.ps1'), [ref]$tokens, [ref]$errors)
-          if ($errors) { throw $errors }
+          Get-ChildItem scripts -Filter '*.ps1' | ForEach-Object {
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors) { throw $errors }
+          }
       - run: python -m py_compile neural/server.py neural/parler_worker.py neural/clone_worker.py neural/transcribe_worker.py neural/build_previews.py scripts/download-models.py

@@ -150,6 +150,16 @@ def load_model(engine="parler", profile=None):
         .to(hardware["device"])
         .eval()
     )
+    if str(hardware["device"]).startswith("privateuseone"):
+        from neural.directml_ops import token_masks_on_cpu, cpu_tensor_function
+        from parler_tts import modeling_parler_tts
+        token_masks_on_cpu(torch, modeling_parler_tts)
+        for module in model.modules():
+            if hasattr(module, "_update_causal_mask"):
+                module._update_causal_mask = cpu_tensor_function(torch, module._update_causal_mask, hardware["device"])
+            if isinstance(module, torch.nn.Embedding):
+                module.register_forward_pre_hook(lambda module, args: (args[0].contiguous(), *args[1:]))
+        hardware["executionMode"] = "hybrid: GPU transformer and codec; CPU integer token masks"
     # The released tokenizer.json already contains the complete Bengali tokenizer.
     # Transformers 4.46 otherwise forces a redundant SentencePiece conversion when
     # add_prefix_space is present, which fails on a JSON-only manual installation.
@@ -190,7 +200,10 @@ def synthesize(data, model, tokenizer):
             continue
         else:
             prompt = prompt_tokenizer(part, return_tensors="pt")
-            with torch.inference_mode():
+            # DirectML cannot attach a version counter to inference tensors.
+            # no_grad keeps inference gradients disabled without that restriction.
+            inference_context = torch.no_grad if str(device).startswith("privateuseone") else torch.inference_mode
+            with inference_context():
                 generation = model.generate(
                     input_ids=inputs.input_ids.to(device),
                     attention_mask=inputs.attention_mask.to(device),

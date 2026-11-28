@@ -67,6 +67,7 @@ type Hardware = {
   device: string; backend?: string; name: string; platform?: string;
   cpuThreads: number; maxScriptCharacters?: number; reason?: string;
   validation?: string; mixedOperations?: boolean; executionMode?: string;
+  renderSeconds?: number; modelCacheHit?: boolean;
 };
 const sample =
   "স্বাগতম ByteminusVoiceStudio-তে। আপনার ভাবনাকে কণ্ঠ দিন। [pause 500ms] আজ থেকেই শুরু হোক নতুন গল্প।";
@@ -706,7 +707,7 @@ export default function Studio() {
             Workspace <span>/</span> <b>{section}</b>
           </span>
           <div className="top-actions">
-            {activeHardware && <span className="engine-pill" title={[activeHardware.name, activeHardware.validation, activeHardware.executionMode, activeHardware.reason].filter(Boolean).join(" · ")}>{activeHardware.device === "unavailable" ? "Runtime unavailable" : activeHardware.device === "cpu" ? `CPU · ${activeHardware.cpuThreads} threads` : `${(activeHardware.backend ?? activeHardware.device).toUpperCase()} · ${activeHardware.name}`}{activeHardware.mixedOperations ? " · CPU + GPU" : ""} · {activeHardware.validation === "speech generated" ? "Last render" : "Detected; render unverified"}</span>}
+            {activeHardware && <span className="engine-pill" title={[activeHardware.name, activeHardware.validation, activeHardware.executionMode, activeHardware.renderSeconds !== undefined ? `${activeHardware.renderSeconds}s · ${activeHardware.modelCacheHit ? "warm model" : "first model load"}` : "", activeHardware.reason].filter(Boolean).join(" · ")}>{activeHardware.device === "unavailable" ? "Runtime unavailable" : activeHardware.device === "cpu" ? `CPU · ${activeHardware.cpuThreads} threads` : `${(activeHardware.backend ?? activeHardware.device).toUpperCase()} · ${activeHardware.name}`}{activeHardware.mixedOperations ? " · CPU + GPU" : ""} · {activeHardware.validation === "speech generated" ? "Last render" : "Detected; render unverified"}</span>}
             <span className="engine-pill">
               <span />{" "}
               {section === "Voice playground" ? (

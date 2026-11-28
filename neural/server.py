@@ -12,6 +12,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_VERSION = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
 os.environ.setdefault("HF_HOME", str(ROOT / ".cache" / "huggingface"))
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
@@ -21,6 +22,7 @@ import torch
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
 from neural.hardware import runtime_profile, cpu_fallback
+from neural.isolated_runtime import PersistentWorker
 
 HARDWARE = runtime_profile(torch, engine="natural", requested="cpu" if os.environ.get("BYTEMINUS_DEVICE") == "directml" else None)
 CPU_THREADS = HARDWARE["cpuThreads"]
@@ -55,6 +57,8 @@ if PARLER_PYTHON.exists():
 ENGINE_HARDWARE = {"mithi": dict(HARDWARE), "kokoro": dict(HARDWARE),
                    "parler": dict(EXPRESSIVE_HARDWARE), "indic": dict(EXPRESSIVE_HARDWARE)}
 DIRECTML_PYTHON = ROOT / ".runtime/directml-env/Scripts/python.exe"
+DIRECTML_WORKER = PersistentWorker(DIRECTML_PYTHON, ROOT / "neural/device_worker.py", cwd=ROOT)
+EXPRESSIVE_WORKER = PersistentWorker(PARLER_PYTHON, ROOT / "neural/device_worker.py", cwd=ROOT)
 if os.name == "nt" and DIRECTML_PYTHON.exists() and os.environ.get("BYTEMINUS_DEVICE", "auto") in {"auto", "directml"}:
     try:
         probe = subprocess.run([str(DIRECTML_PYTHON), str(ROOT / "neural/probe_hardware.py"), "--backend", "directml"],
@@ -128,14 +132,39 @@ def installed():
 def health():
     return {
         "status": "ok",
+        "runtimeVersion": RUNTIME_VERSION,
         "engines": installed(),
         "device": HARDWARE["device"],
         "hardware": HARDWARE,
         "engineHardware": ENGINE_HARDWARE,
         "cpuThreads": CPU_THREADS,
+        "busy": lock.locked(),
         "logicalProcessors": os.cpu_count() or 1,
         "loaded": list(loaded),
     }
+
+
+def release_main_models():
+    loaded.clear()
+    gc.collect()
+    for backend in (torch.cuda, getattr(torch, "xpu", None), getattr(torch, "mps", None)):
+        try:
+            if backend is not None: backend.empty_cache()
+        except Exception:
+            pass
+
+
+@app.post("/release")
+def release_models():
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, "Wait for the current speech generation to finish.")
+    try:
+        DIRECTML_WORKER.close()
+        EXPRESSIVE_WORKER.close()
+        release_main_models()
+        return {"released": True}
+    finally:
+        lock.release()
 
 
 def script_parts(text):
@@ -206,38 +235,23 @@ def render(data):
         )
     directml = ENGINE_HARDWARE[engine].get("backend") == "directml"
     isolated_directml = directml or (engine in {"parler", "indic"} and not PARLER_PYTHON.exists() and DIRECTML_PYTHON.exists())
-    if engine in {"parler", "indic"} or directml:
-        # Separate environment avoids incompatible Transformers requirements and releases RAM after each request.
-        loaded.clear()
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        script_parts(
-            data.text
-        )  # Validate tags before handing text to the isolated worker.
-        result = subprocess.run(
-            [str(DIRECTML_PYTHON if isolated_directml else PARLER_PYTHON), str(ROOT / ("neural/device_worker.py" if isolated_directml else "neural/parler_worker.py"))],
-            input=json.dumps(
-                {**data.model_dump(), "engine": engine}, ensure_ascii=False
-            ).encode("utf-8"),
-            capture_output=True,
-            timeout=1200,
-            cwd=ROOT,
-            env={**os.environ, "BYTEMINUS_EXECUTION_BACKEND": ENGINE_HARDWARE[engine].get("backend", "cpu")},
-        )
-        if result.returncode:
-            print(result.stderr.decode(errors="replace")[-3000:], flush=True)
-            if ENGINE_HARDWARE[engine]["device"] != "cpu" and os.environ.get("BYTEMINUS_DEVICE", "auto") == "auto":
-                ENGINE_HARDWARE[engine] = cpu_fallback(torch, ENGINE_HARDWARE[engine], "isolated accelerator worker failed", engine=engine)
-                return render(data)
-            raise HTTPException(
-                503, "Expressive engine failed. Check the local neural server log."
-            )
-        for line in result.stderr.decode(errors="replace").splitlines():
-            if line.startswith("BYTEMINUS_RUNTIME:"):
-                try: ENGINE_HARDWARE[engine] = json.loads(line.split(":", 1)[1])
-                except ValueError: pass
-        return result.stdout, 24000
+    if isolated_directml:
+        EXPRESSIVE_WORKER.close()
+        release_main_models()
+        script_parts(data.text)
+        output, actual = DIRECTML_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"))
+        ENGINE_HARDWARE[engine] = actual
+        if actual["device"] == "cpu": DIRECTML_WORKER.close()
+        return output, 24000
+    if engine in {"parler", "indic"}:
+        DIRECTML_WORKER.close()
+        release_main_models()
+        script_parts(data.text)
+        output, actual = EXPRESSIVE_WORKER.request(data.model_dump(), backend=ENGINE_HARDWARE[engine].get("backend", "cpu"))
+        ENGINE_HARDWARE[engine] = actual
+        return output, 24000
+    DIRECTML_WORKER.close()
+    EXPRESSIVE_WORKER.close()
     model = model_for(engine)
     chunks = []
     length = 0

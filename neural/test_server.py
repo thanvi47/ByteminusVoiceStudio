@@ -168,6 +168,19 @@ class ProtocolTests(unittest.TestCase):
             403,
         )
 
+    def test_release_rejects_busy_generation_and_closes_idle_workers(self):
+        from neural import server
+        from unittest.mock import patch
+        server.lock.acquire()
+        try:
+            self.assertEqual(self.client.post("/release").status_code, 409)
+        finally:
+            server.lock.release()
+        with patch.object(server.DIRECTML_WORKER, "close") as directml, patch.object(server.EXPRESSIVE_WORKER, "close") as expressive:
+            self.assertEqual(self.client.post("/release").json(), {"released": True})
+            directml.assert_called_once()
+            expressive.assert_called_once()
+
     def test_body_limits(self):
         self.assertEqual(
             self.client.post("/synthesize", content="x" * 20001).status_code, 413

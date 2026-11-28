@@ -20,6 +20,7 @@
 
 ```powershell
 git pull --ff-only
+./scripts/stop-neural.ps1
 ./scripts/setup.ps1 -All -Device auto
 npm run doctor -- --all
 npm run dev
@@ -61,6 +62,10 @@ Runtime force করতে launch-এর আগে PowerShell-এ `$env:BYTEMINU
 
 ## কী পরীক্ষা হয়েছে
 
-Windows AMD integrated GPU-তে DirectML tensor operation বাস্তবে সফল। Kokoro English ও Mithi Bengali speech-এ GPU operator error হয়েছে; একই model দিয়ে CPU retry-তে PCM audio সফল হয়েছে। তাই DirectML speech acceleration এখানে verified দাবি করা হচ্ছে না। NVIDIA/ROCm/XPU/MPS selection এবং failure handling unit test আছে; এই PC-তে সেসব GPU নেই বলে real speech benchmark করা যায়নি। Package CI pass মানে GPU audio verified নয়।
+v0.2.1-এ Windows AMD Radeon(TM) integrated GPU-তে আসল API দিয়ে Kokoro, Mithi, English Parler এবং Bengali Indic Parler audio তৈরি হয়েছে; চারটির দ্বিতীয় request-এ warm cache hit ও DirectML backend যাচাই হয়েছে। v0.2.0-এর depthwise convolution, complex FFT এবং expressive token-mask dtype failure ঠিক করা হয়েছে। Natural engine-এ বড় decoder convolution GPU-তে, text/prosody ও ছোট unsupported operator CPU-তে চলে। Expressive transformer/codec GPU-তে, integer ও causal mask CPU-তে থাকে। তাই `CPU + GPU` দেখানো সঠিক; CPU usage শূন্য হবে না।
+
+একটি ছোট generic sample-এর first/warm request: Kokoro 20.08/1.92s, Mithi 4.89/1.63s, Parler Jon Excited 56.48/24.63s, Indic Aditi Scared 45.34/26.25s। এগুলো model-load বনাম warm-request সময়, CPU বনাম GPU speedup নয়; প্রতিটি engine-এর text/audio duration আলাদা। Full details: [GPU validation](GPU_VALIDATION.md)। Expressive inference এই integrated GPU-তেও ধীর। RX 570, অন্য AMD/Intel/NVIDIA বা Apple GPU এই PC-তে benchmark করা হয়নি; তাদের driver/operator compatibility এখনও আলাদা যাচাই প্রয়োজন। Package CI pass মানে GPU audio verified নয়।
+
+নিজের Windows PC-তে actual CPU/GPU comparison চালাতে `.venv/Scripts/python.exe scripts/benchmark-directml.py --engine mithi` অথবা `--engine kokoro` দিন। একই isolated Torch version-এ first load ও দুটি warm request মাপবে, actual backend assert করবে, generic WAV ও JSON `.cache/benchmarks`-এ রাখবে। CPU fallback হলে GPU success বলে দেখাবে না।
 
 Upstream: [PyTorch wheels](https://pytorch.org/get-started/previous-versions/), [Intel GPU support matrix](https://docs.pytorch.org/docs/2.8/notes/get_start_xpu.html), [Microsoft DirectML](https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows), [Apple MPS](https://docs.pytorch.org/docs/2.8/notes/mps.html)। Driver support matrix মেনে চলুন।

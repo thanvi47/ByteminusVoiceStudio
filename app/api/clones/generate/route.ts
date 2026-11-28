@@ -51,6 +51,18 @@ export async function POST(request: Request) {
     );
   busy = true;
   try {
+    // Free resident speech weights before loading the separate cloning model.
+    // Both endpoints stay on loopback; the request is already authenticated.
+    let released: Response | undefined;
+    try {
+      released = await fetch("http://127.0.0.1:8123/release", { method: "POST", signal: AbortSignal.timeout(15000) });
+    } catch (cause) {
+      // Connection refusal means no speech server is holding model memory.
+      const code = (cause as { cause?: { code?: string } })?.cause?.code;
+      if (code !== "ECONNREFUSED") return error("Unable to release speech model memory. Restart the studio before cloning.", 503);
+    }
+    if (released?.status === 409) return error("Wait for the current speech generation before cloning.", 409);
+    if (released && !released.ok && released.status !== 404) return error("Unable to release speech model memory. Restart the studio before cloning.", 503);
     const data = await new Promise<Buffer>((resolve, reject) => {
       const python = path.join(
         process.cwd(),

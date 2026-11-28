@@ -1,5 +1,13 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.1
+
+- Fixed actual Windows DirectML speech failures: depthwise transposed convolution, unsupported complex FFT, inference tensors and incorrect bool/integer mask promotion. Small unsupported operators use CPU; neural decoder/transformer computation stays on GPU.
+- Verified real API audio on AMD Radeon integrated graphics for Kokoro English, Mithi Bengali, Parler Jon (Excited) and Indic Aditi (Scared), including warm second requests. Other GPU models are not claimed to have been physically benchmarked.
+- Isolated workers now retain one model and reuse Kokoro language pipelines, avoiding process/model reload on every batch. Worker frames, output size and deadlines are bounded; switching engines frees the old cache.
+- Added reproducible `scripts/benchmark-directml.py`, numerical compatibility tests, worker lifecycle tests and hardware validation notes. Existing DirectML installations need a source update and restart; dependencies have not changed.
+- Fixed Windows launcher shutdown so spawned Python process trees do not keep serving old code; added a version check and a project-scoped `scripts/stop-neural.ps1` recovery command.
+
 ## v0.2.0
 
 - Added probed CUDA, ROCm, Intel XPU and Apple MPS device selection, with installer flags for each supported platform.

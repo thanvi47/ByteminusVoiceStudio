@@ -33,4 +33,4 @@ jobs:
       - name: Install all Python packages and check imports (no model downloads)
         run: bash scripts/setup.sh --all --skip-models --skip-web --device cpu
       - name: Check accelerator selection and speech failure fallback
-        run: .venv/bin/python -m unittest neural.test_hardware
+        run: .venv/bin/python -m unittest neural.test_hardware neural.test_directml_ops neural.test_isolated_runtime
