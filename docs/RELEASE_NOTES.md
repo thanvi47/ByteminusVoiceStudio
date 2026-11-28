@@ -1,5 +1,11 @@
 # ByteminusVoiceStudio — source distribution
 
+## v0.2.2
+
+- Recording/project titles and audio/SRT filenames use the first six script words plus `bn` or `en`.
+- Studio, Playground and cloned generation results save audio and estimated SRT locally in browser IndexedDB. History survives reload and supports playback, download and deletion. Clearing site data removes this local history; old closed session-only clips cannot be recovered.
+- Added a Mature, warm & confident expressive direction preset, requesting rich texture, gentle natural breathing and speech rhythm. It guides the model; acting quality and naturalness are not guaranteed.
+
 ## v0.2.1
 
 - Fixed actual Windows DirectML speech failures: depthwise transposed convolution, unsupported complex FFT, inference tensors and incorrect bool/integer mask promotion. Small unsupported operators use CPU; neural decoder/transformer computation stays on GPU.

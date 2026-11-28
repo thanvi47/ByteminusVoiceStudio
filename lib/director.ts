@@ -55,6 +55,16 @@ export const vibes: Vibe[] = [
     "Understated interest and warmth.",
   ),
   vibe(
+    "mature-warm",
+    "Mature, warm & confident",
+    "Rich texture and natural narration",
+    "Calm",
+    "Mature, warm and confident voice with rich vocal texture.",
+    "Grounded and assured; avoid robotic or synthetic-sounding delivery.",
+    "Natural speech rhythm with gentle human-like breaths, without forced breath effects.",
+    "Quiet warmth and composed confidence.",
+  ),
+  vibe(
     "sunny",
     "Bright optimist",
     "Warm, encouraging and upbeat",

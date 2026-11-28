@@ -57,7 +57,7 @@ test("restores a saved project", async ({ page }) => {
   await page.reload();
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await expect(
-    page.getByText("A story worth saving.", { exact: true }),
+    page.getByText("A story worth saving en", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Open", exact: true }).click();
   await expect(

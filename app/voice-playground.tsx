@@ -34,8 +34,11 @@ import {
 } from "@/lib/director";
 import { previewManifestSchema, type PreviewSamples } from "@/lib/previews";
 import AudioPlayer from "./audio-player";
+import { recordingTitle } from "@/lib/recording-title";
+import { saveRecording } from "@/lib/recording-history";
 import { voiceUpdateLabel, voiceEmotionSample } from "@/lib/voice-updates";
 type Take = {
+  title: string;
   id: string;
   input: SynthesisInput;
   vibe: string;
@@ -318,6 +321,7 @@ export default function VoicePlayground({
       if (!Number.isFinite(duration) || duration <= 0)
         throw new Error("Invalid audio duration.");
       const take: Take = {
+        title: recordingTitle(snapshot.text),
         id: crypto.randomUUID(),
         input: snapshot,
         vibe: name,
@@ -332,6 +336,10 @@ export default function VoicePlayground({
       setNotice(
         "Recording ready. Press play below; your previous take stays available for comparison.",
       );
+      try {
+        await saveRecording({ id: take.id, title: take.title, text: snapshot.text, voice: snapshot.voice,
+          format: snapshot.format, duration, subtitles: take.subtitles, audio: blob, created: new Date().toISOString(), source: "playground" });
+      } catch { setNotice("Recording ready, but history could not be saved. Download it now."); }
     } catch (e) {
       if (!controller.signal.aborted)
         setError(e instanceof Error ? e.message : "Generation failed.");
@@ -364,7 +372,7 @@ export default function VoicePlayground({
         </p>
         <div className="director-tags">
           <span>Editable direction</span>
-          <span>12 original vibes</span>
+          <span>{vibes.length} original vibes</span>
           <span>A/B recordings</span>
         </div>
       </div>
@@ -888,7 +896,8 @@ export default function VoicePlayground({
                   </strong>
                   <span>{t.duration.toFixed(1)}s</span>
                 </div>
-                <h4>{voices.find((v) => v.id === t.input.voice)?.name}</h4>
+                <h4>{t.title}</h4>
+                <p>{voices.find((v) => v.id === t.input.voice)?.name}</p>
                 <p>
                   {t.vibe} · {t.input.emotion} · {t.input.rate.toFixed(2)}×
                   speed · {t.input.pitch.toFixed(2)}× pitch
@@ -922,7 +931,7 @@ export default function VoicePlayground({
                   <a
                     className="button"
                     href={t.url}
-                    download={`byteminus-take-${t.id.slice(0, 8)}.${t.input.format}`}
+                    download={`${t.title}.${t.input.format}`}
                   >
                     <Download size={14} /> Audio
                   </a>
@@ -930,7 +939,7 @@ export default function VoicePlayground({
                     onClick={() =>
                       file(
                         t.subtitles,
-                        `byteminus-take-${t.id.slice(0, 8)}-estimated.srt`,
+                        `${t.title}.srt`,
                         "application/x-subrip;charset=utf-8",
                       )
                     }

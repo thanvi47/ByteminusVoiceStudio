@@ -42,6 +42,9 @@ import { voiceUpdateLabel } from "@/lib/voice-updates";
 import VoiceCloning from "./voice-cloning";
 import VoicePlayground from "./voice-playground";
 import AudioPlayer from "./audio-player";
+import RecordingHistory from "./recording-history";
+import { recordingTitle, MATURE_DIRECTION } from "@/lib/recording-title";
+import { saveRecording, deleteRecording } from "@/lib/recording-history";
 type Clip = {
   id: string;
   name: string;
@@ -251,7 +254,7 @@ export default function Studio() {
     if (!text.trim()) return;
     const project: Project = {
       id: crypto.randomUUID(),
-      name: text.replace(/\[[^\]]*\]/g, "").slice(0, 45),
+      name: recordingTitle(text),
       text,
       voice,
       created: new Date().toISOString(),
@@ -308,7 +311,7 @@ export default function Studio() {
       const blob = await r.blob();
       const clip: Clip = {
         id: crypto.randomUUID(),
-        name: source.replace(/\[[^\]]*\]/g, "").slice(0, 45),
+        name: recordingTitle(source),
         text: source,
         url: URL.createObjectURL(blob),
         format,
@@ -327,6 +330,10 @@ export default function Studio() {
           ? "Current settings test is ready in Audio preview. Press play to listen."
           : "Your audio is ready.",
       );
+      try {
+        await saveRecording({ id: clip.id, title: clip.name, text: source, voice: requestedVoice, format,
+          duration: clip.duration, created: clip.created, subtitles: clip.subtitles, audio: blob, source: "studio" });
+      } catch { setNotice("Audio is ready, but history could not be saved. Download this recording now."); }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Generation failed. Please retry.",
@@ -369,14 +376,17 @@ export default function Studio() {
         new Blob([active.subtitles], {
           type: "application/x-subrip;charset=utf-8",
         }),
-        `byteminus-${active.id.slice(0, 8)}-estimated.srt`,
+        `${active.name}.srt`,
       );
   }
-  function removeClip(id: string) {
-    const clip = clips.find((c) => c.id === id);
-    if (clip) URL.revokeObjectURL(clip.url);
-    setClips((old) => old.filter((c) => c.id !== id));
-    if (active?.id === id) setActive(undefined);
+  async function removeClip(id: string) {
+    try {
+      await deleteRecording(id);
+      const clip = clips.find((c) => c.id === id);
+      if (clip) URL.revokeObjectURL(clip.url);
+      setClips((old) => old.filter((c) => c.id !== id));
+      if (active?.id === id) setActive(undefined);
+    } catch { setError("Could not delete this recording. Please retry."); }
   }
   const currentInput = {
     text,
@@ -441,7 +451,7 @@ export default function Studio() {
               currentResult &&
               download(
                 currentResult.url,
-                `byteminus-${currentResult.id.slice(0, 8)}.${currentResult.format}`,
+                `${currentResult.name}.${currentResult.format}`,
               )
             }
           >
@@ -489,6 +499,7 @@ export default function Studio() {
       </div>
       {active ? (
         <div className="player-content">
+          <h3>{active.name}</h3>
           <p className="rendered-settings">
             <strong>
               {active.settingsTest
@@ -548,7 +559,7 @@ export default function Studio() {
               onClick={() =>
                 download(
                   active.url,
-                  `byteminus-${active.id.slice(0, 8)}.${active.format}`,
+                  `${active.name}.${active.format}`,
                 )
               }
             >
@@ -1136,6 +1147,7 @@ export default function Studio() {
                     {choice.styleMode === "prompted" && (
                       <label className="style-label">
                         Voice direction
+                        <button type="button" onClick={() => setStyle(MATURE_DIRECTION)}>Mature · Warm &amp; confident</button>
                         <textarea
                           aria-label="Voice direction"
                           value={style}
@@ -1458,58 +1470,7 @@ export default function Studio() {
               </div>
             </>
           )}
-          {section === "History" && (
-            <div className="project-list">
-              {clips.length ? (
-                clips.map((c) => (
-                  <article className="panel project-row" key={c.id}>
-                    <Volume2 size={22} />
-                    <div>
-                      <strong>{c.name}</strong>
-                      <small>
-                        {c.duration.toFixed(1)}s · {c.format.toUpperCase()} ·{" "}
-                        {c.voice}
-                      </small>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setActive(c);
-                        setSection("Voice studio");
-                      }}
-                    >
-                      Listen
-                    </button>
-                    <button
-                      aria-label="Download audio"
-                      onClick={() =>
-                        download(
-                          c.url,
-                          `byteminus-${c.id.slice(0, 8)}.${c.format}`,
-                        )
-                      }
-                    >
-                      <Download size={16} />
-                    </button>
-                    <button
-                      aria-label="Delete history item"
-                      onClick={() => removeClip(c.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </article>
-                ))
-              ) : (
-                <div className="panel blank-state">
-                  <History size={36} />
-                  <h2>Your first recording is waiting.</h2>
-                  <p>
-                    Generate audio in the studio. History lasts until this page
-                    is closed.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          {section === "History" && <RecordingHistory />}
           {section === "Settings" && (
             <div className="settings-grid">
               <section className="panel settings-card">

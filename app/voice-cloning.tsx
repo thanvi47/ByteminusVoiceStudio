@@ -5,6 +5,8 @@ import { srt } from "@/lib/script";
 import type { CloneProfile } from "@/lib/clone";
 import { cloneFormIssues } from "@/lib/clone-form";
 import AudioPlayer from "./audio-player";
+import { recordingTitle } from "@/lib/recording-title";
+import { saveRecording } from "@/lib/recording-history";
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -83,6 +85,7 @@ export default function VoiceCloning() {
       url: string;
       blob: Blob;
       subtitles: string;
+      title: string;
       format: string;
       duration: number;
       profile: string;
@@ -263,6 +266,7 @@ export default function VoiceCloning() {
       const url = URL.createObjectURL(blob);
       resultRef.current = url;
       setResult({
+        title: recordingTitle(source),
         url,
         blob,
         duration,
@@ -271,6 +275,11 @@ export default function VoiceCloning() {
         profile:
           profiles.find((p) => p.id === requestedProfile)?.name ?? "My voice",
       });
+      try {
+        await saveRecording({ id: crypto.randomUUID(), title: recordingTitle(source), text: source,
+          voice: profiles.find((p) => p.id === requestedProfile)?.name ?? "My voice", format: requestedFormat,
+          duration, subtitles: srt(source, duration), audio: blob, created: new Date().toISOString(), source: "clone" });
+      } catch { setNotice("Audio is ready, but history could not be saved. Download it now."); }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -537,13 +546,13 @@ export default function VoiceCloning() {
         {result && (
           <div className="clone-output">
             <strong>
-              {result.profile} · {result.duration.toFixed(1)}s · Generated voice
+              {result.title} · {result.profile} · {result.duration.toFixed(1)}s
             </strong>
             <AudioPlayer key={result.url} src={result.url} />
             <div className="clone-times">
               <button
                 onClick={() =>
-                  download(result.blob, `byteminus-cloned.${result.format}`)
+                  download(result.blob, `${result.title}.${result.format}`)
                 }
               >
                 <Download size={16} /> Download voice
@@ -554,7 +563,7 @@ export default function VoiceCloning() {
                     new Blob([result.subtitles], {
                       type: "application/x-subrip;charset=utf-8",
                     }),
-                    "byteminus-cloned-estimated.srt",
+                    `${result.title}.srt`,
                   )
                 }
               >

@@ -25,6 +25,12 @@ Built with Next.js, TypeScript and Python. CPU and supported GPU backends are se
 
 The live badges show GitHub stars, forks, package version, CI and release-asset downloads. Download counts are download events, not unique people or successful installations; they exclude `git clone` and GitHub's automatically generated source archives. Clone/unique-cloner/view statistics are available separately in owner-only Insights → Traffic. There is no in-app telemetry, remote install identifier or active-user tracker. Badge values can be cached by Shields/GitHub.
 
+## Automatic titles and saved recordings
+
+Recordings and WAV/MP3/SRT filenames use the first six script words, followed by `bn` for Bengali text or `en` for English. Pause tags and unsafe filename punctuation are removed. New Studio, Playground and cloned recordings are saved locally with audio and estimated SRT; open **History** after reload to listen, download or delete them. Previously closed session-only recordings cannot be recovered. Storage is specific to the browser and site address; failed/quota-limited saves show a warning while the generated result remains downloadable. No recordings are uploaded for this history feature.
+
+Expressive voices offer a **Mature · Warm & confident** direction preset with rich texture, gentle breathing and natural rhythm. It is guidance to the model, not a guarantee of human-like acting or added breathing effects.
+
 ## Voices and delivery
 
 | Engine | Profiles | Language | Controls |
@@ -102,7 +108,7 @@ Use `bash scripts/setup.sh --all` for all optional models after approving Indic 
 
 ## Features
 
-- TXT import, language detection, character/word counts, pause tags, browser-local projects and session audio history.
+- TXT import, language detection, character/word counts, pause tags, browser-local projects and persistent browser audio history (Studio, Playground and cloned results).
 - WAV/MP3 export, actual waveform/duration, browser playback volume/speed.
 - Generate voice + SRT and both download actions sit directly below the script. SRT uses estimated sentence timing.
 - Speaker play buttons use saved neutral MP3 samples, separate from script generation. Samples remain available after reload and without running the neural service.
@@ -118,7 +124,7 @@ Use `bash scripts/setup.sh --all` for all optional models after approving Indic 
 - Explicit PCM silence via `[pause 500ms]` and `[break 1.5s]`, at most 10 seconds per break.
 - Estimated sentence-level SRT; dialogue beta with per-speaker assignment and separate line clips.
 - Production shared-password login, signed HttpOnly cookies, validation and bounded generation.
-- **Voice playground**: English/Bengali voice cards, neutral samples, random voice selection, 12 original vibes, six editable direction fields, example scripts, WAV/MP3 and estimated SRT, local saved presets, recipe JSON import/export, and Python/JavaScript/cURL examples for the local API. The latest two generated takes can be compared side by side. Vibe changes keep the user's script.
+- **Voice playground**: English/Bengali voice cards, neutral samples, random voice selection, 13 original vibes including Mature, warm & confident, six editable direction fields, example scripts, WAV/MP3 and estimated SRT, local saved presets, recipe JSON import/export, and Python/JavaScript/cURL examples for the local API. The latest two generated takes can be compared side by side. Vibe changes keep the user's script.
 
 The playground is inspired by the interaction concepts of [OpenAI.fm](https://openai.fm/); its implementation and preset text are original. It uses the existing local engines. OpenAI voices (including Marin/Cedar), model weights and hosted demo endpoints are not included. The GPT-4o mini TTS API requires paid usage; no OpenAI API key or paid service is added. Qualitative directions only apply to expressive local engines; choosing a vibe does not guarantee OpenAI-level acting. Samples are neutral, and generation finishes before playback rather than streaming. Share uses a recipe file so no hosted database is required. Recipes contain the script and direction; share only what you intend to disclose.
 
@@ -133,13 +139,13 @@ npm run start:studio
 
 Use a trusted HTTPS reverse proxy for production secure cookies. Python must stay on loopback port 8123. Development without a password is allowed only outside production. See [deployment](docs/DEPLOYMENT.md).
 
-Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Neural script limits depend on the detected runtime, with at most 30 breaks and 10 minutes joined output on CPU or 30 minutes on an accelerator. Legacy synthesis keeps its 3,000-character/90-second limits; voice cloning keeps its separate 600-character/90-second limits. No merged dialogue or exact word alignment. Projects live in the browser; download generated audio before reload. Voices may mispronounce names or omit words; review before publishing.
+Neural mode targets a local/self-hosted computer, not an ordinary Vercel function. Free software does not include free hosting, electricity, hardware or bandwidth. Neural script limits depend on the detected runtime, with at most 30 breaks and 10 minutes joined output on CPU or 30 minutes on an accelerator. Legacy synthesis keeps its 3,000-character/90-second limits; voice cloning keeps its separate 600-character/90-second limits. No merged dialogue or exact word alignment. Projects and generated audio history live in this browser; download important audio as a backup because browser storage can be cleared or evicted. Voices may mispronounce names or omit words; review before publishing.
 
 ## Optional voice cloning
 
 Run `./scripts/setup-cloning.ps1`, then open **Voice cloning** in the sidebar. Upload your own/consented MP3 or WAV (up to 20 MB, 3–120 seconds). From a 30-second recording, choose a clean 3–10 second section. Confirm permission, choose the recording language and press **Auto transcribe selected audio**, or type its exact words manually. Optional transcription requires `./scripts/setup-transcription.ps1` once (free multilingual Whisper small, CPU int8). Recognition is a draft, especially for Bengali; listen and correct errors before saving. Visible validation explains missing fields; saving selects the new voice and focuses **Your script**. Enter the new words there, select Bengali or English and press **Generate cloned voice + SRT**. For best pronunciation, use a reference in the output language; cross-language cloning may carry the reference accent. Similarity is not guaranteed.
 
-Profiles and transcripts persist privately in ignored `.data/voices/`, outside `public/`; delete them in the panel. They are shared by users of this single-owner studio password, not isolated accounts. Never deploy this as a multi-user service without separate storage and authorization. Generated audio is session-only. Upload decoding/resampling happens in the browser; only the selected mono WAV is sent to the local server. Optional transcription runs offline in a separate worker, keeps the clip in memory and releases the model after each request. There is no paid API. CPU inference may take several minutes.
+Profiles and transcripts persist privately in ignored `.data/voices/`, outside `public/`; delete them in the panel. They are shared by users of this single-owner studio password, not isolated accounts. Never deploy this as a multi-user service without separate storage and authorization. Generated audio and estimated SRT are saved in this browser using IndexedDB. This includes generated cloned audio; reference recordings and profiles remain in private server storage. Clearing browser site data removes browser history. Download important recordings as a backup. Upload decoding/resampling happens in the browser; only the selected mono WAV is sent to the local server. Optional transcription runs offline in a separate worker, keeps the clip in memory and releases the model after each request. There is no paid API. CPU inference may take several minutes.
 
 OmniVoice **code** is Apache-2.0, but its downloaded **model weights are CC-BY-NC**, and its bundled audio tokenizer has the Boson Higgs Audio 2 Community License. This optional engine is free for noncommercial use; its weights are not unrestricted open-source assets. The main Mithi/Kokoro/Parler engines remain Apache-2.0. Do not assume commercial rights for cloning; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
